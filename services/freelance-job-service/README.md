@@ -88,13 +88,25 @@ The API will be available at `http://localhost:5002/docs`
 
 ## Running Tests
 
+### Step 1 — Create and activate virtual environment
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+### Step 2 — Install dependencies
 ```bash
 pip install -r requirements.txt
 pip install pytest httpx
-pytest tests/
 ```
 
----
+### Step 3 — Run tests
+```bash
+pytest tests/ -v
+```
+
+Expected output: 8 tests passing
+> Note: Tests use SQLite in-memory so no MySQL or Docker needed.
 
 ## Environment Variables
 
