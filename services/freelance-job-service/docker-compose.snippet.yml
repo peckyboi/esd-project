@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Add this block to your team's infra/docker-compose.yml
+# Replace <PORT> with your team's agreed port number (e.g. 5002)
+# ─────────────────────────────────────────────────────────────────────────────
+
+  freelance-job-service:
+    build:
+      context: ../services/freelance-job-service
+      dockerfile: Dockerfile
+    ports:
+      - "<PORT>:5000"
+    environment:
+      - DB_HOST=freelance-job-db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=${FREELANCE_JOB_DB_PASSWORD}
+      - DB_NAME=freelance_job_db
+    depends_on:
+      - freelance-job-db
+    networks:
+      - gig-network
+
+  freelance-job-db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=${FREELANCE_JOB_DB_PASSWORD}
+      - MYSQL_DATABASE=freelance_job_db
+    volumes:
+      - freelance-job-db-data:/var/lib/mysql
+    networks:
+      - gig-network
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Also add these under the top-level volumes: section
+# ─────────────────────────────────────────────────────────────────────────────
+#   freelance-job-db-data:
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Also add to your .env file:
+# ─────────────────────────────────────────────────────────────────────────────
+#   FREELANCE_JOB_DB_PASSWORD=your_password_here
