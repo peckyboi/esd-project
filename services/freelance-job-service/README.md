@@ -39,17 +39,52 @@ Atomic microservice responsible for managing freelance gig listings on the platf
 
 ---
 
-## Running Locally (with Docker Compose)
+## Running Locally (with Docker)
 
-From the project root `infra/` directory:
+Since `docker-compose.yml` is not committed (it will be part of the team's `infra/` setup), 
+create a `docker-compose.yml` file inside `freelance-job-service/` with the following contents:
+```yaml
+services:
+  freelance-job-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5000"
+    environment:
+      - ENVIRONMENT=production
+      - DB_HOST=freelance-job-db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=password123
+      - DB_NAME=freelance_job_db
+    depends_on:
+      freelance-job-db:
+        condition: service_healthy
 
-```bash
-docker compose up --build freelance-job-service freelance-job-db
+  freelance-job-db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=password123
+      - MYSQL_DATABASE=freelance_job_db
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword123"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 ```
 
-The service will be available at `http://localhost:<PORT>/docs` (FastAPI auto-docs).
+Then run from the `freelance-job-service/` folder:
+```bash
+docker compose up --build
+```
 
----
+The API will be available at `http://localhost:5002/docs`
+
+> Note: If Docker Hub login fails, connect to a mobile hotspot and run `docker login` first.
 
 ## Running Tests
 
