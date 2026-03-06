@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # 1. The Order Microservice (Your FastAPI App)
+  order-service:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # We pass the connection strings as environment variables so we don't hardcode passwords in Python
+      - DATABASE_URL=mysql+pymysql://root:rootpassword@mysql-db:3306/orders_db
+      - RABBITMQ_HOST=rabbitmq-broker
+    depends_on:
+      - mysql-db
+      - rabbitmq-broker
+    # This automatically restarts the server if you change your Python code
+    volumes:
+      - ./app:/code/app
+
+  # 2. The MySQL Database Container
+  mysql-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: orders_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # 3. The RabbitMQ Container (Message Broker)
+  rabbitmq-broker:
+    # We use the 'management' tag so you get a nice visual UI in your browser
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # The standard port your Python code uses to send messages
+      - "15672:15672" # The port for the web-based Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+# This ensures your database and message queues survive even if you stop the containers
+volumes:
+  mysql_data:
+  rabbitmq_data:
