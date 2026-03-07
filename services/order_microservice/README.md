@@ -83,12 +83,38 @@ From `order_microservice/`:
 
 ```bash
 docker build -t order-microservice .
-docker run --rm -p 8000:8000 order-microservice
+docker run --rm -p 8001:8000 \
+  -e DATABASE_URL="sqlite:////code/orders.db" \
+  -e RABBITMQ_HOST="localhost" \
+  order-microservice
 ```
 
-Open Swagger at: `http://localhost:8000/docs`
+Open Swagger at: `http://localhost:8001/docs`
 
-> If you need MySQL and RabbitMQ together locally, run them through the team-level `infra/docker-compose.yml`.
+### Important Startup Note
+
+The service starts a RabbitMQ consumer thread on startup. If RabbitMQ is not running, you will see a consumer connection error in logs (`pika.exceptions.AMQPConnectionError`), but the API can still run for basic endpoint testing.
+
+### If You Want RabbitMQ Connected Locally
+
+Start RabbitMQ first:
+
+```bash
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+```
+
+Then run order service and point to host broker:
+
+```bash
+docker run --rm -p 8001:8000 \
+  -e DATABASE_URL="sqlite:////code/orders.db" \
+  -e RABBITMQ_HOST="host.docker.internal" \
+  order-microservice
+```
+
+RabbitMQ UI: `http://localhost:15672` (`guest` / `guest`)
+
+> For full team integration (service + MySQL + RabbitMQ + other services), use the team-level `infra/docker-compose.yml`.
 
 ---
 
