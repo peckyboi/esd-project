@@ -10,12 +10,14 @@ models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="Order Microservice")
 
+#allowed status changes so each bracket dictates what is allowed
 ALLOWED_TRANSITIONS = {
     models.OrderStatus.PENDING_PAYMENT: {
         models.OrderStatus.IN_PROGRESS,
         models.OrderStatus.PAYMENT_FAILED,
+        models.OrderStatus.CANCELLED,
     },
-    models.OrderStatus.IN_PROGRESS: {models.OrderStatus.DELIVERED},
+    models.OrderStatus.IN_PROGRESS: {models.OrderStatus.DELIVERED, models.OrderStatus.CANCELLED},
     models.OrderStatus.DELIVERED: {models.OrderStatus.COMPLETED, models.OrderStatus.DISPUTED},
     models.OrderStatus.DISPUTED: {models.OrderStatus.REFUNDED, models.OrderStatus.RELEASED},
 }
@@ -39,7 +41,7 @@ def _enforce_transition(current: models.OrderStatus, target: models.OrderStatus)
             detail=f"Invalid status transition: {current.value} -> {target.value}",
         )
 
-
+#api endpoints
 @app.on_event("startup")
 def startup_event():
     rabbitmq_consumer.start_consumer_in_background()
@@ -170,6 +172,21 @@ def settle_order(
     db.commit()
     db.refresh(order)
     try:
+        rabbitmq_pub.publish_order_status_updated_event(order)
+    except Exception as err:
+        print(f"Failed to publish to RabbitMQ: {err}")
+    return order
+
+
+@app.patch("/orders/{order_id}/cancel", response_model=schemas.OrderResponse)
+def cancel_order(order_id: int, db: Session = Depends(database.get_db)):
+    order = _get_order_or_404(db, order_id)
+    _enforce_transition(order.status, models.OrderStatus.CANCELLED)
+    order.status = models.OrderStatus.CANCELLED
+    db.commit()
+    db.refresh(order)
+    try:
+        rabbitmq_pub.publish_order_cancelled_event(order)
         rabbitmq_pub.publish_order_status_updated_event(order)
     except Exception as err:
         print(f"Failed to publish to RabbitMQ: {err}")

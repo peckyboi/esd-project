@@ -19,7 +19,7 @@ def _base_order_data(order):
         "settlement_amount": order.settlement_amount,
     }
 
-
+#to publish order data, plus whatever data we need to send over
 def _publish_event(event_type, data):
     event_id = str(uuid4())
     event_payload = {
@@ -76,6 +76,11 @@ def publish_order_completed_event(order):
 def publish_order_disputed_event(order):
     event_id = _publish_event("OrderDisputed", _base_order_data(order))
     print(f"Sent 'OrderDisputed' event for Order ID: {order.id}, event_id: {event_id}")
+
+
+def publish_order_cancelled_event(order):
+    event_id = _publish_event("OrderCancelled", _base_order_data(order))
+    print(f"Sent 'OrderCancelled' event for Order ID: {order.id}, event_id: {event_id}")
 
 
 def publish_order_status_updated_event(order):
