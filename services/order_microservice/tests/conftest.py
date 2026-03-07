@@ -63,7 +63,7 @@ def canonical_order_payload():
     return {
         "client_id": "client-001",
         "freelancer_id": "freelancer-001",
-        "gig_id": "gig-001",
+        "gig_id": 1,
         "price": 120.5,
     }
 
@@ -74,7 +74,7 @@ def create_order_record(db_session):
         order = models.Order(
             client_id=overrides.get("client_id", "client-001"),
             freelancer_id=overrides.get("freelancer_id", "freelancer-001"),
-            gig_id=overrides.get("gig_id", "gig-001"),
+            gig_id=overrides.get("gig_id", 1),
             price=overrides.get("price", 120.5),
             status=status,
             payment_transaction_id=overrides.get("payment_transaction_id"),

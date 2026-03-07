@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -165,9 +166,15 @@ def settle_order(
             detail="final_status must be refunded or released",
         )
 
+    if request.settlement_amount is not None and request.settlement_amount != order.price:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Partial settlement is not supported; settlement_amount must equal order price",
+        )
+
     _enforce_transition(order.status, request.final_status)
     order.status = request.final_status
-    order.settlement_amount = request.settlement_amount
+    order.settlement_amount = order.price
     order.resolved_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(order)
@@ -190,4 +197,17 @@ def cancel_order(order_id: int, db: Session = Depends(database.get_db)):
         rabbitmq_pub.publish_order_status_updated_event(order)
     except Exception as err:
         print(f"Failed to publish to RabbitMQ: {err}")
+    return order
+
+#temporary endpoint to simulate payment success
+@app.patch("/orders/{order_id}/payment-success", response_model=schemas.OrderResponse)
+def payment_success(order_id: int, db: Session = Depends(database.get_db)):
+    if os.getenv("ENABLE_DEV_ENDPOINTS", "false").lower() != "true":
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    order = _get_order_or_404(db, order_id)
+    _enforce_transition(order.status, models.OrderStatus.IN_PROGRESS)
+    order.status = models.OrderStatus.IN_PROGRESS
+    db.commit()
+    db.refresh(order)
     return order

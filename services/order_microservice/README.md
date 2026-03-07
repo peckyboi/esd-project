@@ -157,6 +157,7 @@ pytest ./tests/test_orders_crud.py -v
 > Notes:
 > - Tests use SQLite (`test_order.db`) and do not require MySQL/RabbitMQ.
 > - RabbitMQ publish calls are mocked and asserted.
+> - No partial settlement, only full refunds
 
 ---
 

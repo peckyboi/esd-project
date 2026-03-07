@@ -27,7 +27,7 @@ class Order(Base):
     # foreign key referencing other microservies
     client_id = Column(String(50), index=True, nullable=False) 
     freelancer_id = Column(String(50), index=True, nullable=False)
-    gig_id = Column(String(50), index=True, nullable=False)
+    gig_id = Column(Integer, index=True, nullable=False)
     
     # order details
     price = Column(Float, nullable=False)

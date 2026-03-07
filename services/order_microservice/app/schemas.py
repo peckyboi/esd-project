@@ -11,7 +11,7 @@ from app.models import OrderStatus
 class OrderCreate(BaseModel):
     client_id: str
     freelancer_id: str
-    gig_id: str
+    gig_id: int
     price: float
 
 
@@ -29,7 +29,7 @@ class OrderResponse(BaseModel):
     id: int
     client_id: str
     freelancer_id: str
-    gig_id : str
+    gig_id : int
     price: float
     status: OrderStatus
     created_at: datetime
