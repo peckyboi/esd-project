@@ -14,7 +14,7 @@ class Gig(Base):
     __tablename__ = "gigs"
 
     gig_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    freelancer_id = Column(String(100), nullable=False, index=True)  # references User microservice
+    freelancer_id = Column(Integer, nullable=False, index=True)  # references User microservice
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
     category = Column(String(100), nullable=False, index=True)

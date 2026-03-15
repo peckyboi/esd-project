@@ -29,7 +29,7 @@ def get_gigs(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     search: Optional[str] = None,
-    freelancer_id: Optional[str] = None,
+    freelancer_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 20,
 ) -> list[Gig]:

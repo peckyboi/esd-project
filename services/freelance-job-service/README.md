@@ -33,7 +33,7 @@ Atomic microservice responsible for managing freelance gig listings on the platf
 | `min_price`    | float   | Minimum price filter               |
 | `max_price`    | float   | Maximum price filter               |
 | `search`       | string  | Search in title and description    |
-| `freelancer_id`| string  | Filter gigs by a specific freelancer|
+| `freelancer_id`| int     | Filter gigs by a specific freelancer|
 | `skip`         | int     | Pagination offset (default: 0)     |
 | `limit`        | int     | Max results (default: 20, max: 100)|
 

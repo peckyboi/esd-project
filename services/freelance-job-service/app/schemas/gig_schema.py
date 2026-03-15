@@ -7,7 +7,7 @@ from app.models.gig import GigStatus
 # ── Request Schemas ──────────────────────────────────────────────────────────
 
 class GigCreate(BaseModel):
-    freelancer_id: str = Field(..., description="ID of the freelancer who owns this gig")
+    freelancer_id: int = Field(..., description="ID of the freelancer who owns this gig")
     title: str = Field(..., min_length=5, max_length=255)
     description: str = Field(..., min_length=10)
     category: str = Field(..., max_length=100)
@@ -30,7 +30,7 @@ class GigUpdate(BaseModel):
 
 class GigResponse(BaseModel):
     gig_id: int
-    freelancer_id: str
+    freelancer_id: int
     title: str
     description: str
     category: str
