@@ -24,7 +24,7 @@ def list_gigs(
     min_price: Optional[float] = Query(None, ge=0),
     max_price: Optional[float] = Query(None, ge=0),
     search: Optional[str] = Query(None, description="Search in title and description"),
-    freelancer_id: Optional[str] = Query(None, description="Filter by freelancer"),
+    freelancer_id: Optional[int] = Query(None, description="Filter by freelancer"),
     skip: int = Query(0, ge=0, description="Pagination offset"),
     limit: int = Query(20, ge=1, le=100, description="Max results to return"),
     db: Session = Depends(get_db),

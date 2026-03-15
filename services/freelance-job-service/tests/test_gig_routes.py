@@ -28,7 +28,7 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 SAMPLE_GIG = {
-    "freelancer_id": "freelancer_123",
+    "freelancer_id": 1,
     "title": "I will design your logo",
     "description": "Professional logo design with unlimited revisions",
     "category": "design",
