@@ -3,7 +3,6 @@ package com.freelance.reviewservice.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import lombok.Generated;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -28,22 +27,27 @@ import java.time.LocalDateTime;
 public class Review {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
-    private int review_id;
+    @Column(name = "id")
+    private Integer id;
+
     @Column(name="order_id", nullable = false)
-    private int order_id;
+    private Integer orderId;
+
     @Column(name="gig_id", nullable = false)
-    private int gig_id;
+    private Integer gigId;
+
     @Column(name="client_id", nullable = false)
-    private int client_id;
+    private Integer clientId;
+
     @Column(name="freelancer_id", nullable = false)
-    private int freelancer_id;
+    private Integer freelancerId;
 
     @Min(1)
     @Max(5)
-    @Column(name="order_id", nullable = false)
-    private int rating; //rating from 1-5
+    @Column(name="rating", nullable = false)
+    private Integer rating; //rating from 1-5
 
-    @Column(name="order_id", nullable = false)
+    @Column(name="message", columnDefinition = "TEXT")
     private String message;
 
     @Column(name="is_deleted", nullable = false)

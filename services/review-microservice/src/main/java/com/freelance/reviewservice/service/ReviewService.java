@@ -23,10 +23,10 @@ public class ReviewService {
         }
 
         Review review = new Review();
-        review.setOrder_id(req.getOrderId());
-        review.setGig_id(req.getOrderId());
-        review.setClient_id(req.getClientId());
-        review.setFreelancer_id(req.getFreelancerId());
+        review.setOrderId(req.getOrderId());
+        review.setGigId(req.getGigId());
+        review.setClientId(req.getClientId());
+        review.setFreelancerId(req.getFreelancerId());
         review.setRating(req.getRating());
         review.setMessage(req.getMessage());
 
@@ -84,11 +84,11 @@ public class ReviewService {
 
     private ReviewResponse toResponse(Review r){
         return ReviewResponse.builder()
-                .id(r.getReview_id())
-                .orderId(r.getOrder_id())
-                .gigId(r.getGig_id())
-                .clientId(r.getClient_id())
-                .freelancerId(r.getFreelancer_id())
+                .id(r.getId())
+                .orderId(r.getOrderId())
+                .gigId(r.getGigId())
+                .clientId(r.getClientId())
+                .freelancerId(r.getFreelancerId())
                 .rating(r.getRating())
                 .message(r.getMessage())
                 .createdAt(r.getCreatedAt())
