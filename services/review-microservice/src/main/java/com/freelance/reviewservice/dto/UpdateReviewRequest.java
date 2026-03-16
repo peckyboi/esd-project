@@ -13,5 +13,5 @@ public class UpdateReviewRequest {
     private Integer rating;
 
     @Size(max = 2000)
-    private String comment;
+    private String message;
 }

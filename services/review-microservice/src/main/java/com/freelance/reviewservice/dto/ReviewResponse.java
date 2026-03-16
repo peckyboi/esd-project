@@ -14,7 +14,7 @@ public class ReviewResponse {
     private Integer clientId;
     private Integer freelancerId;
     private Integer rating;
-    private String comment;
+    private String message;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
