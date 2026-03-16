@@ -18,6 +18,9 @@ public class CreateReviewRequest {
     private Integer clientId;
 
     @NotNull
+    private Integer freelancerId;
+
+    @NotNull
     @Min(1)
     @Max(5)
     private Integer rating;
