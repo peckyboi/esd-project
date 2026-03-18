@@ -165,7 +165,7 @@ Quick check:
 
 ```bash
 cd services/review-microservice
-docker compose exec review-db mysql -ureview_user -preview_pass -e "SELECT id, order_id, client_id, rating FROM review_db.reviews;"
+docker compose exec review-db mysql -ureview_user -preview_pass -e "SELECT order_id, client_id, rating FROM review_db.reviews;"
 ```
 
 Remove seeded data only (keep schema):
