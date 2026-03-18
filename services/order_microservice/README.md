@@ -36,8 +36,8 @@ Atomic microservice responsible for managing the order lifecycle for freelance g
 
 | Param           | Type   | Description |
 |-----------------|--------|-------------|
-| `client_id`     | string | Filter by client |
-| `freelancer_id` | string | Filter by freelancer |
+| `client_id`     | int    | Filter by client |
+| `freelancer_id` | int    | Filter by freelancer |
 | `status_filter` | string | Filter by order status |
 
 ---

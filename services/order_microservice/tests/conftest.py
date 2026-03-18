@@ -61,8 +61,8 @@ def reset_db(db_session):
 @pytest.fixture
 def canonical_order_payload():
     return {
-        "client_id": "client-001",
-        "freelancer_id": "freelancer-001",
+        "client_id": 1,
+        "freelancer_id": 101,
         "gig_id": 1,
         "price": 120.5,
     }
@@ -72,8 +72,8 @@ def canonical_order_payload():
 def create_order_record(db_session):
     def _create_order(status=models.OrderStatus.PENDING_PAYMENT, **overrides):
         order = models.Order(
-            client_id=overrides.get("client_id", "client-001"),
-            freelancer_id=overrides.get("freelancer_id", "freelancer-001"),
+            client_id=overrides.get("client_id", 1),
+            freelancer_id=overrides.get("freelancer_id", 101),
             gig_id=overrides.get("gig_id", 1),
             price=overrides.get("price", 120.5),
             status=status,

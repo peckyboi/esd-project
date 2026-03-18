@@ -114,7 +114,7 @@ def test_settle_invalid_transition_when_not_disputed_409(client, create_order_re
     order = create_order_record(status=models.OrderStatus.DELIVERED)
     response = client.patch(
         f"/orders/{order.id}/settle",
-        json={"final_status": models.OrderStatus.REFUNDED.value, "settlement_amount": 10.0},
+        json={"final_status": models.OrderStatus.REFUNDED.value, "settlement_amount": order.price},
     )
     assert response.status_code == 409
 

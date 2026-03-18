@@ -2,8 +2,8 @@ from app import models
 
 
 def test_list_orders_returns_created_orders(client, create_order_record):
-    create_order_record(client_id="client-a")
-    create_order_record(client_id="client-b")
+    create_order_record(client_id=1)
+    create_order_record(client_id=2)
 
     response = client.get("/orders")
     assert response.status_code == 200
@@ -11,27 +11,27 @@ def test_list_orders_returns_created_orders(client, create_order_record):
 
 
 def test_list_orders_filter_by_client_id(client, create_order_record):
-    create_order_record(client_id="client-1")
-    create_order_record(client_id="client-2")
+    create_order_record(client_id=1)
+    create_order_record(client_id=2)
 
-    response = client.get("/orders", params={"client_id": "client-1"})
+    response = client.get("/orders", params={"client_id": 1})
     assert response.status_code == 200
 
     data = response.json()
     assert len(data) == 1
-    assert data[0]["client_id"] == "client-1"
+    assert data[0]["client_id"] == 1
 
 
 def test_list_orders_filter_by_freelancer_id(client, create_order_record):
-    create_order_record(freelancer_id="freelancer-1")
-    create_order_record(freelancer_id="freelancer-2")
+    create_order_record(freelancer_id=201)
+    create_order_record(freelancer_id=202)
 
-    response = client.get("/orders", params={"freelancer_id": "freelancer-2"})
+    response = client.get("/orders", params={"freelancer_id": 202})
     assert response.status_code == 200
 
     data = response.json()
     assert len(data) == 1
-    assert data[0]["freelancer_id"] == "freelancer-2"
+    assert data[0]["freelancer_id"] == 202
 
 
 def test_list_orders_filter_by_status(client, create_order_record):
