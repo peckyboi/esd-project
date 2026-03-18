@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class ReviewResponse {
-    private Integer id;
     private Integer orderId;
     private Integer gigId;
     private Integer clientId;

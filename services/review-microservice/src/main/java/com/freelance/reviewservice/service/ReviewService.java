@@ -18,8 +18,8 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
 
     public ReviewResponse createReview(CreateReviewRequest req){
-        if(reviewRepository.existsByOrderIdAndClientIdAndIsDeletedFalse(req.getOrderId(), req.getClientId())){
-            throw new BadRequestException("Review already exists for this order and client");
+        if(reviewRepository.existsByOrderIdAndIsDeletedFalse(req.getOrderId())){
+            throw new BadRequestException("Review already exists for this order");
         }
 
         Review review = new Review();
@@ -33,10 +33,11 @@ public class ReviewService {
         return toResponse(reviewRepository.save(review)); //saves review into
     }
 
-    public ReviewResponse getReviewById(Integer id){
+    public ReviewResponse getReviewByOrderId(Integer orderId){
 
         //error is thrown in this case because  if i want to get something by a particular id and it doesnt exist it is an exception
-        Review review = reviewRepository.findByIdAndIsDeletedFalse(id).orElseThrow(()->new ResourceNotFoundException("Review not found: " + id));
+        Review review = reviewRepository.findByOrderIdAndIsDeletedFalse(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + orderId));
         return toResponse(review);
     }
 
@@ -64,9 +65,9 @@ public class ReviewService {
                 .toList();
     }
 
-    public ReviewResponse updateReview(Integer id, UpdateReviewRequest req) {
-        Review review = reviewRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + id));
+    public ReviewResponse updateReview(Integer orderId, UpdateReviewRequest req) {
+        Review review = reviewRepository.findByOrderIdAndIsDeletedFalse(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + orderId));
 
         if (req.getRating() != null) review.setRating(req.getRating());
         if (req.getMessage() != null) review.setMessage(req.getMessage());
@@ -74,9 +75,9 @@ public class ReviewService {
         return toResponse(reviewRepository.save(review));
     }
 
-    public void deleteReview(Integer id) {
-        Review review = reviewRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + id));
+    public void deleteReview(Integer OrderId) {
+        Review review = reviewRepository.findByOrderIdAndIsDeletedFalse(OrderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + OrderId));
 
         review.setIsDeleted(true);
         reviewRepository.save(review);
@@ -84,7 +85,6 @@ public class ReviewService {
 
     private ReviewResponse toResponse(Review r){
         return ReviewResponse.builder()
-                .id(r.getId())
                 .orderId(r.getOrderId())
                 .gigId(r.getGigId())
                 .clientId(r.getClientId())

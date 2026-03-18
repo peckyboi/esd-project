@@ -25,9 +25,9 @@ public class ReviewController {
         return reviewService.createReview(request);
     }
 
-    @GetMapping("/{id}")
-    public ReviewResponse getById(@PathVariable Integer id) {
-        return reviewService.getReviewById(id);
+    @GetMapping("/{orderId}")
+    public ReviewResponse getByOrderId(@PathVariable Integer orderId) {
+        return reviewService.getReviewByOrderId(orderId);
     }
 
     @GetMapping
@@ -38,14 +38,14 @@ public class ReviewController {
         return reviewService.getReviews(gigId, freelancerId, clientId);
     }
 
-    @PutMapping("/{id}")
-    public ReviewResponse update(@PathVariable Integer id, @Valid @RequestBody UpdateReviewRequest request) {
-        return reviewService.updateReview(id, request);
+    @PutMapping("/{orderId}")
+    public ReviewResponse update(@PathVariable Integer orderId, @Valid @RequestBody UpdateReviewRequest request) {
+        return reviewService.updateReview(orderId, request);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{orderId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Integer id) {
-        reviewService.deleteReview(id);
+    public void delete(@PathVariable Integer orderId) {
+        reviewService.deleteReview(orderId);
     }
 }

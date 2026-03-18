@@ -10,13 +10,9 @@ import java.util.Optional;
  */
 
 public interface ReviewRepository extends JpaRepository<Review, Integer> {
-    Optional<Review> findByIdAndIsDeletedFalse(Integer id);
-
-    boolean existsByOrderIdAndClientIdAndIsDeletedFalse(Integer orderId, Integer clientId);
-
+    Optional<Review> findByOrderIdAndIsDeletedFalse(Integer orderId);
+    boolean existsByOrderIdAndIsDeletedFalse(Integer orderId);
     List<Review> findByGigIdAndIsDeletedFalse(Integer gigId);
-
     List<Review> findByFreelancerIdAndIsDeletedFalse(Integer freelancerId);
-
     List<Review> findByClientIdAndIsDeletedFalse(Integer clientId);
 }

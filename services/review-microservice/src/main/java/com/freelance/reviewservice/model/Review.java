@@ -13,10 +13,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name="reviews",
-        //uniqueconstraints enforces uniqueness on one column or a column combination
-        uniqueConstraints = {
-                @UniqueConstraint(name="uk_review_order_client", columnNames={"order_id","client_id"})
-        },
         //indexes help make reads faster on columns that you query/filter/sort often
         indexes = {
                 @Index(name="idx_review_gig_id", columnList = "gig_id"),
@@ -26,10 +22,6 @@ import java.time.LocalDateTime;
 )
 public class Review {
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Integer id;
-
     @Column(name="order_id", nullable = false)
     private Integer orderId;
 
