@@ -1,0 +1,65 @@
+package com.freelance.reviewservice.model;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@Entity
+@Table(
+        name="reviews",
+        //indexes help make reads faster on columns that you query/filter/sort often
+        indexes = {
+                @Index(name="idx_review_gig_id", columnList = "gig_id"),
+                @Index(name="idx_review_freelancer_id", columnList = "freelancer_id"),
+                @Index(name="idx_review_client_id", columnList = "client_id"),
+        }
+)
+public class Review {
+    @Id
+    @Column(name="order_id", nullable = false)
+    private Integer orderId;
+
+    @Column(name="gig_id", nullable = false)
+    private Integer gigId;
+
+    @Column(name="client_id", nullable = false)
+    private Integer clientId;
+
+    @Column(name="freelancer_id", nullable = false)
+    private Integer freelancerId;
+
+    @Min(1)
+    @Max(5)
+    @Column(name="rating", nullable = false)
+    private Integer rating; //rating from 1-5
+
+    @Column(name="message", columnDefinition = "TEXT")
+    private String message;
+
+    @Column(name="is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
+    @Column(name="created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name="updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    void onCreate(){
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    void onUpdate(){
+        this.updatedAt = LocalDateTime.now();
+    }
+}
