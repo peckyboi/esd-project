@@ -9,8 +9,8 @@ from app.models import OrderStatus
 
 #what we expect from the client (API Gateway/ Frontend)
 class OrderCreate(BaseModel):
-    client_id: str
-    freelancer_id: str
+    client_id: int
+    freelancer_id: int
     gig_id: int
     price: float
 
@@ -27,8 +27,8 @@ class SettleOrderRequest(BaseModel):
 #what we return the client 
 class OrderResponse(BaseModel):
     id: int
-    client_id: str
-    freelancer_id: str
+    client_id: int
+    freelancer_id: int
     gig_id : int
     price: float
     status: OrderStatus

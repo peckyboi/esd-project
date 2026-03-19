@@ -5,8 +5,8 @@ def test_create_order_missing_required_fields_422(client):
     response = client.post(
         "/orders",
         json={
-            "client_id": "client-1",
-            "gig_id": "gig-1",
+            "client_id": 1,
+            "gig_id": 1,
             "price": 10.0,
         },
     )

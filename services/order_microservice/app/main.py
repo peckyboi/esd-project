@@ -85,8 +85,8 @@ def get_order(order_id: int, db: Session = Depends(database.get_db)):
 
 @app.get("/orders", response_model=list[schemas.OrderResponse])
 def list_orders(
-    client_id: Optional[str] = None,
-    freelancer_id: Optional[str] = None,
+    client_id: Optional[int] = None,
+    freelancer_id: Optional[int] = None,
     status_filter: Optional[models.OrderStatus] = None,
     db: Session = Depends(database.get_db),
 ):
