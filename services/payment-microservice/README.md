@@ -73,7 +73,7 @@ This service uses Stripe in **test mode only**.
 
 To use a real Stripe test key, set the environment variable:
 ```
-STRIPE_SECRET_KEY=sk_test_51TCgOTCyJJOjH9fPZ49aTbVaLVhi5hCyI3RcFdoMw7YKTPuIPqaD75Xtw1HQk8zIw6U4J6TZJj9UgGhoMhi3sPGQ00dS6rOcge
+STRIPE_SECRET_KEY=sk_test_placeholder
 ```
 
 Get your test key from: https://dashboard.stripe.com/test/apikeys
@@ -103,13 +103,13 @@ docker build -t payment-microservice .
 docker run --rm -p 8002:8002 \
   -e DATABASE_URL="sqlite:////code/payment_dev.db" \
   -e RABBITMQ_HOST="host.docker.internal" \
-  -e STRIPE_SECRET_KEY="sk_test_51TCgOTCyJJOjH9fPZ49aTbVaLVhi5hCyI3RcFdoMw7YKTPuIPqaD75Xtw1HQk8zIw6U4J6TZJj9UgGhoMhi3sPGQ00dS6rOcge" \
+  -e STRIPE_SECRET_KEY="sk_test_placeholder" \
   payment-microservice
 ```
 
 **Windows (Command Prompt):**
 ```bash
-docker run --rm -p 8002:8002 -e DATABASE_URL="sqlite:////code/payment_dev.db" -e RABBITMQ_HOST="host.docker.internal" -e STRIPE_SECRET_KEY="sk_test_51TCgOTCyJJOjH9fPZ49aTbVaLVhi5hCyI3RcFdoMw7YKTPuIPqaD75Xtw1HQk8zIw6U4J6TZJj9UgGhoMhi3sPGQ00dS6rOcge" payment-microservice
+docker run --rm -p 8002:8002 -e DATABASE_URL="sqlite:////code/payment_dev.db" -e RABBITMQ_HOST="host.docker.internal" -e STRIPE_SECRET_KEY="sk_test_placeholder" payment-microservice
 ```
 
 **Windows (PowerShell):**
@@ -164,7 +164,7 @@ docker compose up --build
 | `ENVIRONMENT`       | `development`                                                | Switch SQLite/MySQL  |
 | `DATABASE_URL`      | `mysql+pymysql://root:password123@localhost:3306/payment_db` | DB connection URL    |
 | `RABBITMQ_HOST`     | `localhost`                                                  | RabbitMQ host        |
-| `STRIPE_SECRET_KEY` | `sk_test_51TCgOTCyJJOjH9fPZ49aTbVaLVhi5hCyI3RcFdoMw7YKTPuIPqaD75Xtw1HQk8zIw6U4J6TZJj9UgGhoMhi3sPGQ00dS6rOcge`                                        | Stripe secret key    |
+| `STRIPE_SECRET_KEY` | `sk_test_placeholder`                                        | Stripe secret key    |
 
 ---
 
