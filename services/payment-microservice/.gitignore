@@ -1,0 +1,19 @@
+# Virtual environment
+venv/
+payment-venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker compose (local only)
+docker-compose.yml
+
+# Environment files
+.env
