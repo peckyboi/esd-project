@@ -24,8 +24,8 @@ Atomic microservice responsible for handling payment escrow, release and refund 
 |--------|---------------------------|------------------------------------|
 | GET    | `/health`                 | Health check                       |
 | POST   | `/payments/hold`          | Hold payment in escrow via Stripe  |
-| POST   | `/payments/release`       | Release payment to freelancer      |
-| POST   | `/payments/refund`        | Refund payment to client           |
+| PATCH   | `/payments/release`       | Release payment to freelancer      |
+| PATCH   | `/payments/refund`        | Refund payment to client           |
 | GET    | `/payments/{payment_id}`  | Get payment details                |
 
 ---

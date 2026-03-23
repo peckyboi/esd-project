@@ -62,7 +62,7 @@ def hold_payment(request: HoldPaymentRequest, db: Session = Depends(get_db)):
     return payment
 
 
-@router.post("/release", response_model=PaymentResponse)
+@router.patch("/release", response_model=PaymentResponse)
 def release_payment(request: ReleasePaymentRequest, db: Session = Depends(get_db)):
     """
     Release held payment to freelancer via Stripe capture.
@@ -103,7 +103,7 @@ def release_payment(request: ReleasePaymentRequest, db: Session = Depends(get_db
     return payment
 
 
-@router.post("/refund", response_model=PaymentResponse)
+@router.patch("/refund", response_model=PaymentResponse)
 def refund_payment(request: RefundPaymentRequest, db: Session = Depends(get_db)):
     """
     Refund held payment back to client via Stripe refund.

@@ -104,7 +104,7 @@ def test_release_payment_success(mock_completed, mock_capture, mock_publish, moc
     })
     payment_id = hold_res.json()["payment_id"]
 
-    response = client.post("/payments/release", json={"payment_id": payment_id})
+    response = client.patch("/payments/release", json={"payment_id": payment_id})
     assert response.status_code == 200
     assert response.json()["status"] == "released"
     mock_completed.assert_called_once()
@@ -113,7 +113,7 @@ def test_release_payment_success(mock_completed, mock_capture, mock_publish, moc
 @patch("app.routes.payment_routes.stripe_client.create_payment_intent")
 @patch("app.routes.payment_routes.rabbitmq.publish_payment_success")
 def test_release_payment_not_found(mock_publish, mock_stripe):
-    response = client.post("/payments/release", json={"payment_id": 99999})
+    response = client.patch("/payments/release", json={"payment_id": 99999})
     assert response.status_code == 404
 
 
@@ -138,7 +138,7 @@ def test_refund_payment_success(mock_completed, mock_refund, mock_publish, mock_
     })
     payment_id = hold_res.json()["payment_id"]
 
-    response = client.post("/payments/refund", json={"payment_id": payment_id})
+    response = client.patch("/payments/refund", json={"payment_id": payment_id})
     assert response.status_code == 200
     assert response.json()["status"] == "refunded"
     mock_completed.assert_called_once()
@@ -162,10 +162,10 @@ def test_cannot_refund_released_payment(mock_completed, mock_capture, mock_publi
         "amount": 60.00
     })
     payment_id = hold_res.json()["payment_id"]
-    client.post("/payments/release", json={"payment_id": payment_id})
+    client.patch("/payments/release", json={"payment_id": payment_id})
 
     # Try to refund an already released payment
-    response = client.post("/payments/refund", json={"payment_id": payment_id})
+    response = client.patch("/payments/refund", json={"payment_id": payment_id})
     assert response.status_code == 409
     assert "Cannot refund" in response.json()["detail"]
 
