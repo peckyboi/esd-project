@@ -13,11 +13,12 @@ INSERT INTO reviews (
   updated_at
 )
 VALUES
-  (1001, 501, 201, 301, 5, 'Great work, fast delivery and clear communication.', 0, NOW(), NOW()),
-  (1002, 501, 202, 301, 4, 'Solid quality overall, minor revisions needed.', 0, NOW(), NOW()),
-  (1003, 502, 203, 302, 5, 'Excellent design and very responsive.', 0, NOW(), NOW()),
-  (1004, 503, 204, 303, 3, 'Work completed, but timeline slipped.', 0, NOW(), NOW()),
-  (1005, 504, 205, 304, 4, 'Good value for money and smooth handoff.', 0, NOW(), NOW())
+  (4,  1, 1, 2, 5, 'Excellent work, delivered ahead of schedule.', 0, NOW(), NOW()),
+  (5,  2, 2, 3, 4, 'Great React site, minor tweaks needed but overall solid.', 0, NOW(), NOW()),
+  (9,  4, 4, 5, 2, 'Work did not meet expectations, had to request a refund.', 0, NOW(), ),
+  (10, 5, 5, 6, 3, 'Decent work but communication was slow throughout.', 0, NOW(), NOW()),
+  (3,  3, 3, 4, 5, 'Video editing was top quality, very happy.', 0, NOW(), NOW())
+
 ON DUPLICATE KEY UPDATE
   gig_id = VALUES(gig_id),
   freelancer_id = VALUES(freelancer_id),
