@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.sql import func
 import enum
 from app.database import Base
@@ -31,7 +31,7 @@ class Order(Base):
     
     # order details
     price = Column(Float, nullable=False)
-    status = Column(Enum(OrderStatus), default=OrderStatus.PENDING_PAYMENT, nullable=False)
+    status = Column(String(50), default=OrderStatus.PENDING_PAYMENT.value, nullable=False)
     payment_transaction_id = Column(String(100), nullable=True) 
 
     # timestamps
