@@ -15,7 +15,7 @@ INSERT INTO reviews (
 VALUES
   (4,  1, 1, 2, 5, 'Excellent work, delivered ahead of schedule.', 0, NOW(), NOW()),
   (5,  2, 2, 3, 4, 'Great React site, minor tweaks needed but overall solid.', 0, NOW(), NOW()),
-  (9,  4, 4, 5, 2, 'Work did not meet expectations, had to request a refund.', 0, NOW(), ),
+  (9,  4, 4, 5, 2, 'Work did not meet expectations, had to request a refund.', 0, NOW(), NOW()),
   (10, 5, 5, 6, 3, 'Decent work but communication was slow throughout.', 0, NOW(), NOW()),
   (3,  3, 3, 4, 5, 'Video editing was top quality, very happy.', 0, NOW(), NOW())
 

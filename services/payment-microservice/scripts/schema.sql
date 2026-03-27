@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS payments (
   client_id INT NOT NULL,
   freelancer_id INT NOT NULL,
   amount DECIMAL(10, 2) NOT NULL,
-  status ENUM('held', 'released', 'refunded', 'failed') NOT NULL DEFAULT 'held',
+  status VARCHAR(50) NOT NULL DEFAULT 'held',
   stripe_payment_intent_id VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

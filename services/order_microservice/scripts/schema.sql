@@ -4,17 +4,7 @@ CREATE TABLE IF NOT EXISTS orders (
   freelancer_id INT NOT NULL,
   gig_id INT NOT NULL,
   price FLOAT NOT NULL,
-  status ENUM(
-            'pending_payment',
-            'in_progress',
-            'delivered',
-            'completed',
-            'cancelled',
-            'payment_failed',
-            'disputed',
-            'refunded',
-            'released'
-            ) NOT NULL DEFAULT 'pending_payment',
+  status VARCHAR(50) NOT NULL DEFAULT 'pending_payment',
   payment_transaction_id  VARCHAR(100)  NULL,
   dispute_reason VARCHAR(500)  NULL,
   settlement_amount FLOAT NULL,

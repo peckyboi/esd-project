@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, Enum, DateTime
+from sqlalchemy import Column, Integer, String, Numeric, DateTime
 from sqlalchemy.sql import func
 from app.db.database import Base
 import enum
@@ -19,7 +19,7 @@ class Payment(Base):
     client_id = Column(Integer, nullable=False)
     freelancer_id = Column(Integer, nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
-    status = Column(Enum(PaymentStatus), nullable=False, default=PaymentStatus.held)
+    status = Column(String(50), nullable=False, default=PaymentStatus.held.value)
     stripe_payment_intent_id = Column(String(255), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
