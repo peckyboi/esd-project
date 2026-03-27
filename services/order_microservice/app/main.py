@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -6,8 +7,6 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import database, models, rabbitmq_consumer, rabbitmq_pub, schemas
-
-models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="Order Microservice")
 
@@ -45,6 +44,25 @@ def _enforce_transition(current: models.OrderStatus, target: models.OrderStatus)
 #api endpoints
 @app.on_event("startup")
 def startup_event():
+    # Retry connecting to database with exponential backoff
+    max_retries = 10
+    retry_count = 0
+    while retry_count < max_retries:
+        try:
+            # Test the connection
+            with database.engine.connect() as conn:
+                pass
+            break
+        except Exception as err:
+            retry_count += 1
+            if retry_count >= max_retries:
+                print(f"Failed to connect to database after {max_retries} retries: {err}")
+                raise
+            wait_time = min(2 ** retry_count, 10)  # Exponential backoff, max 10 seconds
+            print(f"Database not ready, retrying in {wait_time}s... (attempt {retry_count}/{max_retries})")
+            time.sleep(wait_time)
+    
+    models.Base.metadata.create_all(bind=database.engine)
     rabbitmq_consumer.start_consumer_in_background()
 
 
