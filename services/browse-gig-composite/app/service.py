@@ -7,15 +7,26 @@ from app.http_client import ServiceClient
 from app.schemas import GigListing, ReviewItem
 
 
-def _reviews_to_items(raw: List[dict]) -> List[ReviewItem]:
+
+async def review_list_convert(raw: List[dict]) -> List[ReviewItem]:
+    """Convert raw review dicts to ReviewItem models"""
     items: List[ReviewItem] = []
     for r in raw:
         try:
-            items.append(ReviewItem.model_validate(r))
+            cid = r.get("clientId")
+            fid = r.get("freelancerId")
+            cinfo = await ServiceClient.get_user_info(cid)
+            client_name = cinfo.get("displayName")
+            finfo = await ServiceClient.get_user_info(fid)
+            freelancer_name = finfo.get("displayName")
+            items.append(ReviewItem(
+                **r,
+                client_name=client_name,
+                freelancer_name=freelancer_name,
+            ))
         except Exception:
             continue
     return items
-
 
 async def _enrich_gig_dict(gig: dict) -> GigListing:
     """Merge raw gig JSON with freelancer profile and gig-scoped reviews."""
@@ -23,10 +34,11 @@ async def _enrich_gig_dict(gig: dict) -> GigListing:
         f_id = gig["freelancer_id"]
         gig_id = gig["gig_id"]
         user_info, reviews_raw = await asyncio.gather(
-            ServiceClient.get_freelancer_info(f_id),
+            ServiceClient.get_user_info(f_id),
             ServiceClient.get_reviews_by_gig(gig_id),
         )
-        review_list = _reviews_to_items(reviews_raw)
+        
+        review_list = await review_list_convert(reviews_raw)
 
         avg_rating: Optional[float] = None
         if review_list:

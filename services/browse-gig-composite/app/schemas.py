@@ -5,14 +5,20 @@ from datetime import datetime
 
 # ── Response Schemas ─────────────────────────────────────────────────────────
 class ReviewItem(BaseModel):
-    """Single review as returned by the review microservice (camelCase input)."""
+    """Review row: IDs are accepted from the review API but omitted from responses; names are filled by the composite."""
 
     model_config = ConfigDict(populate_by_name=True)
 
     order_id: int = Field(alias="orderId")
     gig_id: Optional[int] = Field(None, alias="gigId")
-    client_id: Optional[int] = Field(None, alias="clientId")
-    freelancer_id: Optional[int] = Field(None, alias="freelancerId")
+    client_id: Optional[int] = Field(None, alias="clientId", exclude=True)
+    freelancer_id: Optional[int] = Field(None, alias="freelancerId", exclude=True)
+    client_name: Optional[str] = Field(
+        None, description="Display name of the client who wrote the review"
+    )
+    freelancer_name: Optional[str] = Field(
+        None, description="Display name of the freelancer on this review record"
+    )
     rating: Optional[int] = None
     message: Optional[str] = None
     created_at: Optional[datetime] = Field(None, alias="createdAt")
@@ -37,10 +43,10 @@ class AggregatedGigResponse(BaseModel):
 
 
 
-class FreelancerInfo(BaseModel):
-    """Freelancer information from User microservice"""
-    freelancer_id: int
-    freelancer_name: str
+class UserInfo(BaseModel):
+    """User information from User microservice"""
+    user_id: int
+    user_name: str
     avatar: Optional[str] = None
 
     class Config:

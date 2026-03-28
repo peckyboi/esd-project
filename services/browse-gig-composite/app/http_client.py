@@ -12,7 +12,7 @@ REVIEW_SERVICE_URL = os.getenv(
 )
 USER_SERVICE_URL = os.getenv(
     "USER_SERVICE_URL",
-    "https://personal-43hivjqa.outsystemscloud.com/User/rest/User/#/"
+    "https://personal-43hivjqa.outsystemscloud.com/User/rest/User/"
 )
 
 REQUEST_TIMEOUT = 10
@@ -81,11 +81,12 @@ class ServiceClient:
             return response.json()
 
     @staticmethod
-    async def get_freelancer_info(freelancer_id: int) -> Dict[str, Any]:
-        """Fetch freelancer info from OutSystems. Raises exception on failure."""
+    async def get_user_info(user_id: int) -> Dict[str, Any]:
+        """Fetch user profile from the user service. Raises exception on failure."""
         async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT, follow_redirects=True) as client:
             response = await client.get(
-                f"https://personal-43hivjqa.outsystemscloud.com/User/rest/User/user/{freelancer_id}",params={"UserId": freelancer_id}
+                f"{USER_SERVICE_URL}/user/{user_id}",
+                params={"UserId": user_id},
             )
             response.raise_for_status()
             return response.json()
