@@ -21,6 +21,6 @@ class Gig(Base):
     price = Column(Float, nullable=False)
     delivery_days = Column(Integer, nullable=False)
     image_url = Column(String(500), nullable=True)
-    status = Column(Enum(GigStatus), default=GigStatus.active, nullable=False)
+    status = Column(String(50), default=GigStatus.active.value, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
