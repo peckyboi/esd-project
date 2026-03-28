@@ -140,6 +140,17 @@ services:
       - "8085:8085"
     networks:
       - ms-net
+
+volumes:
+  review_db_data:
+  order_db_data:
+  payment_db_data:
+  freelance_job_db_data:
+
+
+networks:
+  ms-net:
+    driver: bridge
 ```
 
 # 2) How to Call This Service
