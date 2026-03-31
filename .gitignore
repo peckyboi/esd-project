@@ -210,3 +210,7 @@ __marimo__/
 freelance_job_dev.db
 docker-compose.yml
 test.db
+
+#others
+.DS_Store
+.idea/
