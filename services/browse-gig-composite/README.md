@@ -30,7 +30,7 @@ These are all the blocks needed to integrate the composite service. Add them to 
 services:
   browse-gig-composite:
     build:
-      context: ./browse-gig-composite
+      context: ../services/browse-gig-composite
       dockerfile: Dockerfile
     container_name: browse-gig-composite
     ports:
