@@ -1,26 +1,26 @@
+import { Text } from "@/components/retroui/Text";
 import ChatListItem from "./ChatListItem";
-import { Input } from "@/components/retroui/Input";
 
-function ChatList({ chats, activeChatId, setActiveChatId }) {
+export default function ChatList({ chats, activeChatId, onSelectChat }) {
     return (
-        <div className="flex flex-col h-full">
-            <aside className="p-3 flex flex-col gap-3 flex-1">
-                <Input placeholder="Search chats..." className="h-10 bg-white" />
+        <div className="flex flex-col w-full h-full border-r border-border bg-white overflow-y-auto">
+            <div className="p-4 border-b border-border bg-primary">
+                <Text as="h3" className="font-semibold text-lg">
+                    Chats
+                </Text>
+            </div>
 
-                <div className="flex flex-col gap-2 overflow-y-auto mt-2">
-                    {chats.map((chat, idx) => (
-                        <ChatListItem
-                            key={chat.id}
-                            chat={chat}
-                            index={idx}
-                            active={chat.id === activeChatId}
-                            onClick={() => setActiveChatId(chat.id)}
-                        />
-                    ))}
-                </div>
-            </aside>
+            <div className="flex flex-col">
+                {chats.map((chat, index) => (
+                    <ChatListItem
+                        key={chat.id}
+                        chat={chat}
+                        index={index}
+                        active={chat.id === activeChatId}
+                        onClick={() => onSelectChat(chat.id)}
+                    />
+                ))}
+            </div>
         </div>
     );
 }
-
-export default ChatList;

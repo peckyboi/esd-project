@@ -4,15 +4,13 @@ import { User } from "lucide-react";
 
 function ChatListItem({ chat, active, onClick, index }) {
     const bgClass = active
-        ? "bg-white border-l-4 border-primary font-semibold"
-        : index % 2 === 0
-            ? "bg-gray-50 hover:bg-white"
-            : "bg-white hover:bg-gray-50";
+        ? "bg-primary/10 border-l-4 border-primary font-semibold"
+        : "bg-transparent hover:bg-gray-100";
 
     return (
-        <div
-            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${bgClass}`}
+        <button
             onClick={onClick}
+            className={`flex items-center gap-3 w-full p-3 transition-colors text-left rounded-r-lg ${bgClass}`}
         >
             <Avatar className="h-10 w-10 border border-border">
                 <Avatar.Fallback>
@@ -20,15 +18,21 @@ function ChatListItem({ chat, active, onClick, index }) {
                 </Avatar.Fallback>
             </Avatar>
 
-            <div className="flex flex-col">
-                <Text as="p" className="font-medium text-foreground">
+            <div className="flex flex-col overflow-hidden">
+                <Text
+                    as="p"
+                    className={`font-medium text-foreground truncate`}
+                >
                     {chat.name}
                 </Text>
-                <Text as="p" className="text-sm text-muted-foreground">
+                <Text
+                    as="p"
+                    className="text-sm text-muted-foreground truncate"
+                >
                     {chat.lastMessage}
                 </Text>
             </div>
-        </div>
+        </button>
     );
 }
 
