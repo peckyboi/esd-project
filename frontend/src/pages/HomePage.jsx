@@ -2,6 +2,7 @@ import { Input } from "@/components/retroui/Input";
 import { Select } from "@/components/retroui/Select";
 import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
+import { Link } from "react-router-dom";
 import GigCard from "@/components/GigCard";
 import { User, MessageSquare } from "lucide-react";
 
@@ -69,9 +70,9 @@ function HomePage() {
             </Text>
           </div>
           <nav className="flex items-center gap-4 text-lg">
-            <a
+            <Link
+              to="/profile"
               className="text-foreground no-underline"
-              href="#"
               title="Profile"
               aria-label="Profile"
             >
@@ -80,7 +81,7 @@ function HomePage() {
                   <User size={22} />
                 </Avatar.Fallback>
               </Avatar>
-            </a>
+            </Link>
             <a
               className="text-foreground no-underline"
               href="#"
