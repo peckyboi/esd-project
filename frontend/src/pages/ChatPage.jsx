@@ -1,7 +1,7 @@
 import { useState } from "react";
-import ChatList from "@/components/ChatList";
-import ChatWindow from "@/components/ChatWindow";
-import GigInfoPanel from "@/components/GigInfoPanel";
+import ChatList from "@/components/chat/ChatList";
+import ChatWindow from "@/components/chat/ChatWindow";
+import GigInfoPanel from "@/components/chat/GigInfoPanel";
 import { Card } from "@/components/retroui/Card";
 
 const chats = [
