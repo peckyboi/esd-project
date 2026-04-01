@@ -2,6 +2,7 @@ import { Input } from "@/components/retroui/Input";
 import { Select } from "@/components/retroui/Select";
 import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
+import { Link } from "react-router-dom";
 import GigCard from "@/components/GigCard";
 import { User, MessageSquare } from "lucide-react";
 
@@ -81,9 +82,9 @@ function HomePage() {
                 </Avatar.Fallback>
               </Avatar>
             </a>
-            <a
+            <Link
               className="text-foreground no-underline"
-              href="#"
+              to="/chat"
               title="Messages"
               aria-label="Messages"
             >
@@ -92,7 +93,7 @@ function HomePage() {
                   <MessageSquare size={22} />
                 </Avatar.Fallback>
               </Avatar>
-            </a>
+            </Link>
           </nav>
         </header>
 

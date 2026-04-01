@@ -15,14 +15,14 @@ function GigDetailPage() {
             "I will develop a custom SaaS web application tailored to your business needs with modern design, secure authentication, and robust functionality.",
     };
 
-    const orderStatus = null; // can be null, in_progress or delivered
+    const orderStatus = 'delivered'; // can be null, in_progress or delivered
 
     return (
         <main className="min-h-screen bg-background p-6">
             <div className="mx-auto max-w-6xl space-y-6">
 
                 <Link to={`/`}>
-                    <Button variant="outline">← Back to Homepage</Button>
+                    <Button variant="outline" className="bg-white">← Back to Homepage</Button>
                 </Link>
 
                 <Text as="h1" className="mt-6">{gig.title}</Text>
@@ -44,7 +44,9 @@ function GigDetailPage() {
 
                 {orderStatus === "delivered" && (
                     <div className="flex gap-3">
-                        <Button variant="outline">Dispute Order</Button>
+                        <Link to={`/chat`}>
+                            <Button variant="outline" className="bg-white">Dispute Order</Button>
+                        </Link>
                         <Button>Confirm Order</Button>
                     </div>
                 )}
