@@ -1,180 +1,196 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Text } from "@/components/retroui/Text";
-import summaryImg from "@/assets/_.jpeg";
+import { Check } from "lucide-react";
 
 function PaymentPage() {
   const location = useLocation();
 
   const gig = location.state?.gig || {
-    freelancer: "Alice Williams",
-    delivery: "3 days (active)",
+    title: "SaaS Web App Development",
+    freelancer: "Alice W",
+    delivery: "2 days delivery",
     price: 495
   };
 
   const quantity = location.state?.quantity || 1;
   const totalPrice = location.state?.totalPrice || gig.price * quantity;
 
-  const [paymentMethod, setPaymentMethod] = useState("credit-card");
-  const [saveCard, setSaveCard] = useState(true);
-
-  const order = {
-    basePackage: gig.price,
-    delivery: gig.delivery,
-    total: totalPrice
-  };
+  const [saveCard, setSaveCard] = useState(false);
 
   return (
-    <main className="min-h-screen w-full bg-background text-foreground p-6">
-      <div className="mx-auto max-w-6xl rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-          <section className="max-w-[700px]">
-            <div className="mb-8 flex w-fit rounded-xl border border-border bg-background p-1">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("credit-card")}
-                className={`h-[48px] min-w-[150px] rounded-lg px-6 text-base font-semibold transition ${
-                  paymentMethod === "credit-card"
-                    ? "bg-card text-foreground"
-                    : "bg-transparent text-muted-foreground"
-                }`}
-              >
+    <main className="min-h-screen bg-background p-6">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div>
+          <Text as="h1" className="text-5xl font-bold text-black">
+            Payment
+          </Text>
+          <Text as="p" className="mt-3 text-lg text-[#5f43b2]">
+            Complete your order securely using your credit card details.
+          </Text>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1.45fr_0.85fr]">
+          <section className="border-2 border-black bg-[#f7f7f7] p-6 shadow-[6px_6px_0_0_#000]">
+            <div className="border-2 border-black bg-[#ece8f8] p-5">
+              <Text as="h2" className="text-2xl font-bold text-black">
                 Credit Card
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("paypal")}
-                className={`h-[48px] min-w-[150px] rounded-lg px-6 text-base font-semibold transition ${
-                  paymentMethod === "paypal"
-                    ? "bg-card text-foreground"
-                    : "bg-transparent text-muted-foreground"
-                }`}
-              >
-                PayPal
-              </button>
-            </div>
-
-            <div className="mb-5">
-              <Text as="label" className="mb-2 block text-sm font-medium">
-                Card Number
               </Text>
-              <input
-                type="text"
-                defaultValue="1234 5678 9101 0000"
-                className="h-[56px] w-full rounded-xl border border-border bg-background px-4 text-base outline-none"
-              />
-            </div>
 
-            <div className="mb-5 grid grid-cols-2 gap-6">
-              <div>
-                <Text as="label" className="mb-2 block text-sm font-medium">
-                  Expiration Date
+              <div className="mt-6 space-y-5">
+                <div>
+                  <Text as="label" className="mb-3 block text-lg text-black">
+                    Card Number
+                  </Text>
+                  <input
+                    type="text"
+                    placeholder="1234 5678 9101 0000"
+                    autoComplete="cc-number"
+                    inputMode="numeric"
+                    className="h-14 w-full border-2 border-black bg-[#f7f7f7] px-4 text-lg text-black outline-none"
+                  />
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div>
+                    <Text as="label" className="mb-3 block text-lg text-black">
+                      Expiration Date
+                    </Text>
+                    <input
+                      type="text"
+                      placeholder="MM / YY"
+                      autoComplete="cc-exp"
+                      inputMode="numeric"
+                      className="h-14 w-full border-2 border-black bg-[#f7f7f7] px-4 text-lg text-black outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <Text as="label" className="mb-3 block text-lg text-black">
+                      CVV
+                    </Text>
+                    <input
+                      type="password"
+                      placeholder="123"
+                      autoComplete="cc-csc"
+                      inputMode="numeric"
+                      className="h-14 w-full border-2 border-black bg-[#f7f7f7] px-4 text-lg text-black outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Text as="label" className="mb-3 block text-lg text-black">
+                    Name on Card
+                  </Text>
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    autoComplete="cc-name"
+                    className="h-14 w-full border-2 border-black bg-[#f7f7f7] px-4 text-lg text-black outline-none"
+                  />
+                </div>
+
+                <div>
+                  <Text as="label" className="mb-3 block text-lg text-black">
+                    Country
+                  </Text>
+                  <input
+                    type="text"
+                    placeholder="Country"
+                    autoComplete="country"
+                    className="h-14 w-full border-2 border-black bg-[#f7f7f7] px-4 text-lg text-black outline-none"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSaveCard((prev) => !prev)}
+                  className="flex items-center gap-4 pt-2"
+                >
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center border-2 border-black ${
+                      saveCard ? "bg-[#ff9800]" : "bg-[#f7f7f7]"
+                    }`}
+                  >
+                    {saveCard && (
+                      <Check className="h-5 w-5 text-black" strokeWidth={3} />
+                    )}
+                  </div>
+
+                  <Text as="span" className="text-lg text-[#5f43b2]">
+                    Save this card for future purchases
+                  </Text>
+                </button>
+
+                <Text as="p" className="pt-2 text-base text-[#5f43b2]">
+                  Encrypted Checkout • SSL Secured • Money-back Guarantee
                 </Text>
-                <input
-                  type="text"
-                  defaultValue="MM / YY"
-                  className="h-[56px] w-full rounded-xl border border-border bg-background px-4 text-base outline-none"
-                />
-              </div>
-
-              <div>
-                <Text as="label" className="mb-2 block text-sm font-medium">
-                  CVV
-                </Text>
-                <input
-                  type="password"
-                  defaultValue="123"
-                  className="h-[56px] w-full rounded-xl border border-border bg-background px-4 text-base outline-none"
-                />
               </div>
             </div>
-
-            <div className="mb-5">
-              <Text as="label" className="mb-2 block text-sm font-medium">
-                Name on Card
-              </Text>
-              <input
-                type="text"
-                defaultValue={gig.freelancer}
-                className="h-[56px] w-full rounded-xl border border-border bg-background px-4 text-base outline-none"
-              />
-            </div>
-
-            <div className="mb-5">
-              <input
-                type="text"
-                defaultValue="United States"
-                className="h-[56px] w-full rounded-xl border border-border bg-background px-4 text-base outline-none"
-              />
-            </div>
-
-            <label className="mb-8 flex cursor-pointer items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setSaveCard((prev) => !prev)}
-                className={`h-4 w-4 rounded-full ${
-                  saveCard ? "bg-orange-400" : "bg-muted"
-                }`}
-              />
-              <Text as="span" className="text-sm text-muted-foreground">
-                Save this card for future purchases
-              </Text>
-            </label>
-
-            <div className="mb-10 flex items-center gap-4 text-sm text-muted-foreground">
-              <span>VISA</span>
-              <span>Mastercard</span>
-              <span>PayPal</span>
-              <span>Amex</span>
-            </div>
-
-            <Text as="p" className="text-sm text-muted-foreground">
-              Encrypted Checkout • SSL Secured • Money-back Guarantee
-            </Text>
           </section>
 
-          <aside className="flex justify-start lg:justify-center">
-            <div className="w-full max-w-[380px] rounded-2xl border border-border bg-background p-5">
-              <div className="mb-4 h-[240px] w-full overflow-hidden rounded-xl border border-border bg-muted">
-                <img
-                  src={summaryImg}
-                  alt="Order summary"
-                  className="h-full w-full object-cover"
-                />
-              </div>
+          <aside className="border-2 border-black bg-[#f7f7f7] p-6 shadow-[6px_6px_0_0_#000]">
+            <Text as="h2" className="text-3xl font-bold text-black">
+              Order Summary
+            </Text>
 
-              <Text className="mb-5 text-center text-xl font-semibold">
-                Order Summary
-              </Text>
-
-              <div className="mb-8 space-y-4">
-                <div className="flex justify-between">
-                  <Text>Base Package</Text>
-                  <Text>${order.basePackage}</Text>
+            <div className="mt-5 border-2 border-black bg-[#dfe5f4] p-4 shadow-[4px_4px_0_0_#000]">
+              <div className="border-[4px] border-black bg-[#d7dff0] p-4">
+                <div className="mb-3 space-y-2">
+                  <div className="h-3 w-[42%] bg-[#c4cee8]" />
+                  <div className="h-3 w-[30%] bg-[#cfd8ee]" />
                 </div>
 
-                <div className="flex justify-between">
-                  <Text>Delivery</Text>
-                  <Text>{order.delivery}</Text>
+                <div className="flex h-[180px] items-center justify-center bg-[#6679a7]">
+                  <Text className="text-3xl font-bold text-white">
+                    GIG PREVIEW
+                  </Text>
                 </div>
 
-                <div className="flex justify-between font-medium">
-                  <Text>Total</Text>
-                  <Text>${order.total} USD</Text>
+                <div className="mt-3 flex gap-3">
+                  <div className="h-4 w-[120px] bg-[#a78bfa]" />
+                  <div className="h-4 w-[85px] bg-[#a78bfa]" />
                 </div>
               </div>
+            </div>
 
-              <button
-                type="button"
-                className="mb-4 h-[58px] w-full rounded-full bg-[#ff6f73] text-base font-semibold text-white transition hover:opacity-90"
-              >
-                Pay ${order.total}
+            <div className="mt-5 border-2 border-black bg-[#ece8f8] p-5">
+              <div className="space-y-4">
+                <div className="flex justify-between text-lg">
+                  <Text className="text-[#5f43b2]">Base Price</Text>
+                  <Text className="font-semibold text-black">
+                    ${gig.price}
+                  </Text>
+                </div>
+
+                <div className="flex justify-between text-lg">
+                  <Text className="text-[#5f43b2]">Quantity</Text>
+                  <Text className="font-semibold text-black">
+                    {quantity}
+                  </Text>
+                </div>
+
+                <div className="flex justify-between text-lg">
+                  <Text className="text-[#5f43b2]">Delivery</Text>
+                  <Text className="font-semibold text-black">
+                    {gig.delivery}
+                  </Text>
+                </div>
+
+                <div className="border-t-2 border-black pt-4 flex justify-between">
+                  <Text className="text-2xl font-bold text-black">
+                    Total
+                  </Text>
+                  <Text className="text-2xl font-bold text-black">
+                    ${totalPrice}
+                  </Text>
+                </div>
+              </div>
+
+              <button className="mt-6 w-full h-14 border-2 border-black bg-[#c9a7ff] text-black text-lg font-semibold shadow-[3px_3px_0_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition">
+                Pay ${totalPrice}
               </button>
-
-              <div className="flex h-[50px] items-center justify-center rounded-xl border border-border bg-card">
-                <Text className="text-sm">SSL secured checkout</Text>
-              </div>
             </div>
           </aside>
         </div>
