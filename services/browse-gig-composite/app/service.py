@@ -58,6 +58,8 @@ async def enrich_gig_dict(gig: dict, user_cache: dict[int, dict]) -> GigListing:
         delivery_days=gig["delivery_days"],
         freelancer_name=freelancer_name,
         avatar=avatar,
+        category=gig["category"],
+        image_url=gig.get("image_url"),
         average_rating=avg_rating,
         review_count=len(review_list),
         review_list=review_list,
@@ -92,5 +94,34 @@ async def get_aggregated_gig_by_id(gig_id: int) -> Optional[GigListing]:
         if e.response.status_code == 404:
             return None
         raise
-    user_cache = await fetch_users_batch([gig["freelancer_id"]])
-    return await enrich_gig_dict(gig, user_cache)
+    
+    try: 
+        reviews_raw = await ServiceClient.get_reviews_by_gig(gig_id)
+    except Exception: 
+        reviews_raw = []
+    
+    client_ids = [r.get("clientId") for r in reviews_raw if r.get("clientId") is not None]
+    all_user_ids = list(set(client_ids + [gig["freelancer_id"]]))
+    
+    user_cache = await fetch_users_batch(all_user_ids)
+    
+    review_list = await review_list_convert(reviews_raw, user_cache)
+    
+    user_info = user_cache.get(gig["freelancer_id"], {})
+    rating = [r.rating for r in review_list if r.rating is not None]
+    avg_rating = round(sum(rating) / len(rating), 1) if rating else None
+    
+    return GigListing(
+        gig_id=gig["gig_id"],
+        title=gig["title"],
+        description=gig["description"],
+        price=gig["price"],
+        delivery_days=gig["delivery_days"],
+        freelancer_name=user_info.get("displayName", "Unknown"),
+        avatar=user_info.get("avatarUrl"),
+        category=gig["category"],
+        image_url=gig.get("image_url"),
+        average_rating=avg_rating,
+        review_count=len(review_list),
+        review_list=review_list,
+    )
