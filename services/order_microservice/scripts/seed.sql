@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS orders (
   freelancer_id INT NOT NULL,
   gig_id INT NOT NULL,
   price FLOAT NOT NULL,
+  order_description VARCHAR(1000) NULL,
   status ENUM(
             'pending_payment',
             'in_progress',

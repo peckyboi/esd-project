@@ -21,6 +21,7 @@ import app.main as main_module
 TEST_DATABASE_URL = "sqlite:///./test_order.db"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+models.Base.metadata.drop_all(bind=engine)
 models.Base.metadata.create_all(bind=engine)
 
 #use local db
@@ -63,6 +64,7 @@ def canonical_order_payload():
         "freelancer_id": 101,
         "gig_id": 1,
         "price": 120.5,
+        "order_description": "Please include source files and brief documentation.",
     }
 
 
@@ -74,6 +76,7 @@ def create_order_record(db_session):
             freelancer_id=overrides.get("freelancer_id", 101),
             gig_id=overrides.get("gig_id", 1),
             price=overrides.get("price", 120.5),
+            order_description=overrides.get("order_description"),
             status=status,
             payment_transaction_id=overrides.get("payment_transaction_id"),
             dispute_reason=overrides.get("dispute_reason"),

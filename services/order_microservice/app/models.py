@@ -31,6 +31,7 @@ class Order(Base):
     
     # order details
     price = Column(Float, nullable=False)
+    order_description = Column(String(1000), nullable=True)
     status = Column(String(50), default=OrderStatus.PENDING_PAYMENT.value, nullable=False)
     payment_transaction_id = Column(String(100), nullable=True) 
 

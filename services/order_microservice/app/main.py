@@ -91,6 +91,7 @@ def create_order(order_request: schemas.OrderCreate, db: Session = Depends(datab
             freelancer_id=order_request.freelancer_id,
             gig_id=order_request.gig_id,
             price=order_request.price,
+            order_description=order_request.order_description,
         )
 
         db.add(new_order)

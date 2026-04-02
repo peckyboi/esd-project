@@ -14,6 +14,7 @@ class OrderCreate(BaseModel):
     freelancer_id: int
     gig_id: int
     price: float
+    order_description: Optional[str] = None
 
 
 class DisputeOrderRequest(BaseModel):
@@ -51,6 +52,7 @@ class OrderResponse(BaseModel):
     freelancer_id: int
     gig_id : int
     price: float
+    order_description: Optional[str] = None
     status: OrderStatus
     created_at: datetime
     
