@@ -6,16 +6,12 @@ import OrdersPagination from "@/components/orders/OrdersPagination";
 
 const ORDERS_PER_PAGE = 4;
 
-// Sample orders, replace with your data source later
+// Sample orders, replace with our data source later
 const initialOrders = [
-    { id: 1, title: "SaaS Web App", freelancer: "Alice W", status: "in_progress", statusMessage: "Halfway done" },
-    { id: 2, title: "UI Design", freelancer: "Bob K", status: "delivered", statusMessage: "Delivered, pending approval" },
-    { id: 3, title: "Backend API", freelancer: "Charlie L", status: "completed", statusMessage: "Completed successfully" },
-    { id: 4, title: "Marketing Campaign", freelancer: "Dana M", status: "disputed", statusMessage: "Client raised a dispute" },
-    { id: 5, title: "Mobile App", freelancer: "Eve P", status: "in_progress", statusMessage: "Halfway done" },
-    { id: 6, title: "Landing Page", freelancer: "Frank Q", status: "completed", statusMessage: "Completed successfully" },
-    { id: 7, title: "Logo Design", freelancer: "Grace R", status: "delivered", statusMessage: "Delivered, pending approval" },
-    { id: 8, title: "SEO Optimization", freelancer: "Helen S", status: "in_progress", statusMessage: "Halfway done" },
+    { id: 1, title: "SaaS Web App", freelancer: "Alice W", price: 450, deliveryDays: 7, status: "in_progress", statusMessage: "Halfway done" },
+    { id: 2, title: "UI Design", freelancer: "Bob K", price: 120, deliveryDays: 3, status: "delivered", statusMessage: "Delivered, pending approval" },
+    { id: 3, title: "Backend API", freelancer: "Charlie L", price: 300, deliveryDays: 5, status: "completed", statusMessage: "Completed successfully" },
+    { id: 4, title: "Marketing Campaign", freelancer: "Dana M", price: 200, deliveryDays: 4, status: "disputed", statusMessage: "Client raised a dispute" },
 ];
 
 export default function OrdersPage() {
@@ -25,7 +21,6 @@ export default function OrdersPage() {
 
     const tabs = ["All", "Active", "Completed", "Disputed"];
 
-    // Filter orders by active tab
     const filteredOrders = initialOrders
         .filter((order) => {
             if (activeTab === "All") return true;
@@ -33,14 +28,12 @@ export default function OrdersPage() {
         })
         .filter((order) => order.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // Slice orders for current page
     const start = (currentPage - 1) * ORDERS_PER_PAGE;
     const end = start + ORDERS_PER_PAGE;
     const ordersToShow = filteredOrders.slice(start, end);
 
     return (
         <main className="min-h-screen w-full p-6 bg-muted">
-            {/* Tabs + Search */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div className="flex gap-3">
                     {tabs.map((tab) => (
@@ -71,14 +64,12 @@ export default function OrdersPage() {
                 />
             </div>
 
-            {/* Order grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {ordersToShow.map((order) => (
                     <OrderCard key={order.id} order={order} />
                 ))}
             </div>
 
-            {/* Pagination */}
             <div className="mt-6">
                 <OrdersPagination
                     totalOrders={filteredOrders.length}

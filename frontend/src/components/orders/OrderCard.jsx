@@ -5,7 +5,6 @@ import { Button } from "@/components/retroui/Button";
 import { Progress } from "@/components/retroui/Progress";
 
 export default function OrderCard({ order }) {
-    // Determine progress and color based on status
     let progressValue = 0;
     let progressColor = "bg-yellow-500"; // default in-progress
 
@@ -37,7 +36,16 @@ export default function OrderCard({ order }) {
                 {/* <StatusBadge status={order.status} /> */}
             </div>
 
-            <Text className="text-sm text-muted-foreground">{order.freelancer}</Text>
+            <Text className="text-sm font-bold text-muted-foreground">
+                {order.freelancer}
+            </Text>
+
+            <div className="flex justify-between items-center text-sm">
+                <span className="font-semibold">${order.price}</span>
+                <span className="text-muted-foreground">
+                    {order.deliveryDays} day delivery
+                </span>
+            </div>
 
             <Progress value={progressValue} className={`h-2 rounded ${progressColor}`} />
 
