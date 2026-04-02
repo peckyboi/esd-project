@@ -4,6 +4,7 @@ import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
 import { Star } from "lucide-react";
 import summaryImg from "@/assets/_.jpeg";
+import { createOrder } from "@/api/orderApi";
 
 function PlaceOrderPage() {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ function PlaceOrderPage() {
 
   const [quantity, setQuantity] = useState(1);
   const [requirements, setRequirements] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const totalPrice = useMemo(() => gig.price * quantity, [gig.price, quantity]);
 
@@ -33,15 +36,33 @@ function PlaceOrderPage() {
     setQuantity((prev) => prev + 1);
   };
 
-  const handlePlaceOrder = () => {
-    navigate("/payment", {
-      state: {
-        gig,
-        quantity,
-        requirements,
-        totalPrice
-      }
-    });
+  const handlePlaceOrder = async () => {
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const order = await createOrder({
+        clientId: gig.client_id || 1,
+        freelancerId: gig.freelancer_id || gig.user_id || 1,
+        gigId: gig.gig_id || gig.id,
+        price: totalPrice,
+        orderDescription: requirements || null,
+      });
+
+      navigate("/payment", {
+        state: {
+          gig,
+          quantity,
+          requirements,
+          totalPrice,
+          orderId: order.id,
+        }
+      });
+    } catch (err) {
+      setSubmitError(err.message || "Failed to create order");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -136,10 +157,17 @@ function PlaceOrderPage() {
             <button
               type="button"
               onClick={handlePlaceOrder}
-              className="flex h-[60px] w-full max-w-[700px] items-center justify-center rounded-full bg-[#ff6f73] px-8 text-lg font-semibold text-white transition hover:opacity-90"
+              disabled={isSubmitting}
+              className="flex h-[60px] w-full max-w-[700px] items-center justify-center rounded-full bg-[#ff6f73] px-8 text-lg font-semibold text-white transition hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Place Order (${totalPrice})
+              {isSubmitting ? "Creating order..." : `Place Order ($${totalPrice})`}
             </button>
+
+            {submitError && (
+              <Text as="p" className="mt-3 text-sm text-red-600">
+                {submitError}
+              </Text>
+            )}
 
             <div className="mt-5 flex w-full max-w-[700px] items-center justify-center gap-5 text-sm text-muted-foreground">
               <span>PayPal</span>

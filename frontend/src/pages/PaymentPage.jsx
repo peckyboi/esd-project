@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Text } from "@/components/retroui/Text";
 import { Check } from "lucide-react";
+import { holdPayment } from "@/api/paymentApi";
+import { updateOrderPaymentResult } from "@/api/orderApi";
 
 function PaymentPage() {
   const location = useLocation();
@@ -15,8 +17,43 @@ function PaymentPage() {
 
   const quantity = location.state?.quantity || 1;
   const totalPrice = location.state?.totalPrice || gig.price * quantity;
+  const orderId = location.state?.orderId || null;
 
   const [saveCard, setSaveCard] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentResult, setPaymentResult] = useState(null);
+  const [flowError, setFlowError] = useState("");
+
+  const handlePay = async () => {
+    setIsSubmitting(true);
+    setFlowError("");
+    setPaymentResult(null);
+
+    try {
+      if (!orderId) {
+        throw new Error("Missing order id. Create the order first.");
+      }
+
+      const payment = await holdPayment({
+        orderId,
+        clientId: gig.client_id || 1,
+        freelancerId: gig.freelancer_id || gig.user_id || 1,
+        amount: totalPrice,
+      });
+
+      const updatedOrder = await updateOrderPaymentResult({
+        orderId,
+        paymentId: payment.payment_id,
+        paymentStatus: payment.status,
+      });
+
+      setPaymentResult({ payment, updatedOrder });
+    } catch (err) {
+      setFlowError(err.message || "Payment flow failed");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-background p-6">
@@ -188,9 +225,34 @@ function PaymentPage() {
                 </div>
               </div>
 
-              <button className="mt-6 w-full h-14 border-2 border-black bg-[#c9a7ff] text-black text-lg font-semibold shadow-[3px_3px_0_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition">
-                Pay ${totalPrice}
+              <button
+                type="button"
+                onClick={handlePay}
+                disabled={isSubmitting}
+                className="mt-6 w-full h-14 border-2 border-black bg-[#c9a7ff] text-black text-lg font-semibold shadow-[3px_3px_0_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Processing..." : `Pay $${totalPrice}`}
               </button>
+
+              {flowError && (
+                <Text as="p" className="mt-4 text-sm text-red-600">
+                  {flowError}
+                </Text>
+              )}
+
+              {paymentResult && (
+                <div className="mt-4 rounded border-2 border-black bg-white p-3 text-sm">
+                  <Text as="p">
+                    Order ID: {paymentResult.updatedOrder?.id || orderId}
+                  </Text>
+                  <Text as="p">
+                    Payment ID: {paymentResult.payment?.payment_id}
+                  </Text>
+                  <Text as="p">
+                    Order Status: {paymentResult.updatedOrder?.status}
+                  </Text>
+                </div>
+              )}
             </div>
           </aside>
         </div>
