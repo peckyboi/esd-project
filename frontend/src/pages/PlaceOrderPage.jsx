@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
 import { Star } from "lucide-react";
-import summaryImg from "@/assets/order-summary.png";
+import summaryImg from "@/assets/_.jpeg";
 
 function PlaceOrderPage() {
   const [quantity, setQuantity] = useState(1);
