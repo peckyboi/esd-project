@@ -2,205 +2,246 @@ import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
-import { Star } from "lucide-react";
-import summaryImg from "@/assets/_.jpeg";
-import { createOrder } from "@/api/orderApi";
+import { Star, Clock3 } from "lucide-react";
 
 function PlaceOrderPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const fallbackGig = {
-    freelancer: "Alice Williams",
-    rating: 4.7,
+  const gig = location.state?.gig || {
+    id: 1,
+    title: "SaaS Web App Development",
+    freelancer: "Alice W",
+    rating: 4.8,
     description:
-      "I will design a beautiful, modern UI for desktop, iOS, or Android apps using Figma",
-    delivery: "3 days (active)",
-    price: 495
+      "I will develop a custom SaaS web application tailored to your business needs with modern design, secure authentication, and robust functionality.",
+    delivery: "2 days delivery",
+    price: 495,
+    category: "Web Development"
   };
-
-  const gig = location.state?.gig || fallbackGig;
 
   const [quantity, setQuantity] = useState(1);
   const [requirements, setRequirements] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
 
   const totalPrice = useMemo(() => gig.price * quantity, [gig.price, quantity]);
 
   const handleDecrease = () => {
-    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+    setQuantity((prev) => Math.max(1, prev - 1));
   };
 
   const handleIncrease = () => {
     setQuantity((prev) => prev + 1);
   };
 
-  const handlePlaceOrder = async () => {
-    setIsSubmitting(true);
-    setSubmitError("");
-
-    try {
-      const order = await createOrder({
-        clientId: gig.client_id || 1,
-        freelancerId: gig.freelancer_id || gig.user_id || 1,
-        gigId: gig.gig_id || gig.id,
-        price: totalPrice,
-        orderDescription: requirements || null,
-      });
-
-      navigate("/payment", {
-        state: {
-          gig,
-          quantity,
-          requirements,
-          totalPrice,
-          orderId: order.id,
-        }
-      });
-    } catch (err) {
-      setSubmitError(err.message || "Failed to create order");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handlePlaceOrder = () => {
+    navigate("/payment", {
+      state: {
+        gig,
+        quantity,
+        requirements,
+        totalPrice
+      }
+    });
   };
 
   return (
-    <main className="min-h-screen w-full bg-background text-foreground p-6">
-      <div className="mx-auto max-w-6xl rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <div className="grid gap-8 lg:grid-cols-[1.7fr_0.9fr]">
-          <section>
-            <Text as="h1" className="mb-10 text-4xl font-semibold">
-              Place Order
-            </Text>
+    <main className="min-h-screen bg-background p-6">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div>
+          <Text as="h1" className="text-5xl font-bold text-black">
+            Place Order
+          </Text>
+          <Text as="p" className="mt-3 text-lg text-[#5f43b2]">
+            Review your selected gig, confirm quantity, and add any project details before checkout.
+          </Text>
+        </div>
 
-            <div className="mb-10 flex items-start gap-4">
-              <Avatar className="h-12 w-12 border border-border bg-muted">
-                <Avatar.Fallback className="bg-transparent text-foreground">
-                  AW
-                </Avatar.Fallback>
-              </Avatar>
+        {/* Full-width gig box */}
+        <div className="border-2 border-black bg-[#f7f7f7] p-6 shadow-[6px_6px_0_0_#000]">
+          <div className="flex items-start gap-5">
+            <Avatar className="h-16 w-16 rounded-none border-2 border-black bg-[#ddd5f3]">
+              <Avatar.Fallback className="bg-transparent text-xl text-black">
+                {gig.freelancer?.charAt(0) || "A"}
+              </Avatar.Fallback>
+            </Avatar>
 
-              <div>
-                <Text as="p" className="text-xl font-medium">
+            <div className="flex-1">
+              <Text as="h2" className="text-4xl font-bold leading-tight text-black">
+                {gig.title}
+              </Text>
+
+              <div className="mt-4 flex flex-wrap items-center gap-5">
+                <Text as="span" className="text-xl text-black">
                   {gig.freelancer}
                 </Text>
 
-                <div className="mt-1 flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <Text as="span" className="text-sm">
+                <div className="flex items-center gap-2">
+                  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  <Text as="span" className="text-xl text-[#5f43b2]">
                     {gig.rating}
                   </Text>
                 </div>
 
-                <Text
-                  as="p"
-                  className="mt-3 max-w-[460px] text-sm leading-6 text-muted-foreground"
-                >
+                <div className="flex items-center gap-2">
+                  <Clock3 className="h-5 w-5 text-[#5f43b2]" />
+                  <Text as="span" className="text-xl text-[#5f43b2]">
+                    {gig.delivery}
+                  </Text>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Horizontal summary section */}
+        <div className="border-2 border-black bg-[#f7f7f7] p-6 shadow-[6px_6px_0_0_#000]">
+          <Text as="h2" className="text-3xl font-bold text-black">
+            Order Summary
+          </Text>
+
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1.05fr_1fr]">
+            {/* Left: preview + description */}
+            <div className="space-y-4">
+              <div className="border-2 border-black bg-[#dfe5f4] p-4 shadow-[4px_4px_0_0_#000]">
+                <div className="border-[4px] border-black bg-[#d7dff0] p-4">
+                  <div className="mb-3 space-y-2">
+                    <div className="h-3 w-[42%] bg-[#c4cee8]" />
+                    <div className="h-3 w-[30%] bg-[#cfd8ee]" />
+                  </div>
+
+                  <div className="flex h-[220px] items-center justify-center bg-[#6679a7]">
+                    <Text as="span" className="text-4xl font-bold tracking-wide text-white">
+                      GIG PREVIEW
+                    </Text>
+                  </div>
+
+                  <div className="mt-3 flex gap-3">
+                    <div className="h-4 w-[120px] bg-[#a78bfa]" />
+                    <div className="h-4 w-[85px] bg-[#a78bfa]" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-2 border-black bg-[#ece8f8] p-4">
+                <Text as="h3" className="text-lg font-semibold text-black">
+                  Description
+                </Text>
+
+                <Text as="p" className="mt-2 text-base leading-7 text-[#5f43b2]">
                   {gig.description}
                 </Text>
               </div>
             </div>
 
-            <div className="mb-8">
-              <Text as="p" className="mb-3 text-sm font-medium">
-                Delivery Time
-              </Text>
-
-              <div className="flex h-[56px] w-full max-w-[760px] items-center rounded-xl border border-border bg-background px-2">
-                <button
-                  type="button"
-                  className="h-[40px] min-w-[190px] rounded-lg border border-orange-400 bg-transparent px-6 text-sm font-medium"
-                >
-                  {gig.delivery}
-                </button>
-              </div>
-            </div>
-
-            <div className="mb-12 flex w-full max-w-[760px] items-center justify-between gap-6">
-              <Text as="p" className="text-sm font-medium">
-                Number
-              </Text>
-
-              <div className="flex h-[56px] w-[220px] items-center justify-between rounded-xl border border-border bg-background px-6">
-                <button
-                  type="button"
-                  onClick={handleDecrease}
-                  className="text-2xl font-semibold transition hover:opacity-70"
-                >
-                  -
-                </button>
-
-                <Text as="span" className="text-xl font-medium">
-                  {quantity}
+            {/* Right: details + requirements + total */}
+            <div className="space-y-5">
+              <div className="border-2 border-black bg-[#ece8f8] p-5">
+                <Text as="h3" className="text-2xl font-bold text-black">
+                  Order Details
                 </Text>
 
-                <button
-                  type="button"
-                  onClick={handleIncrease}
-                  className="text-2xl font-semibold transition hover:opacity-70"
-                >
-                  +
-                </button>
+                <div className="mt-5">
+                  <Text as="label" className="mb-3 block text-lg text-black">
+                    Delivery Time
+                  </Text>
+                  <div className="flex h-14 items-center border-2 border-black bg-[#f7f7f7] px-4 text-lg text-black">
+                    {gig.delivery}
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  <Text as="label" className="mb-3 block text-lg text-black">
+                    Number of Orders
+                  </Text>
+
+                  <div className="flex h-14 w-[220px] items-center justify-between border-2 border-black bg-[#f7f7f7] px-3">
+                    <button
+                      type="button"
+                      onClick={handleDecrease}
+                      className="flex h-10 w-10 items-center justify-center border-2 border-black bg-white text-2xl text-black"
+                    >
+                      -
+                    </button>
+
+                    <Text as="span" className="text-xl font-medium text-black">
+                      {quantity}
+                    </Text>
+
+                    <button
+                      type="button"
+                      onClick={handleIncrease}
+                      className="flex h-10 w-10 items-center justify-center border-2 border-black bg-white text-2xl text-black"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div className="mb-8">
-              <textarea
-                value={requirements}
-                onChange={(e) => setRequirements(e.target.value)}
-                placeholder="Enter any specific project requirements here..."
-                className="h-[130px] w-full max-w-[600px] resize-none rounded-xl border border-border bg-background px-5 py-4 text-sm outline-none placeholder:text-muted-foreground"
-              />
-            </div>
+              <div className="border-2 border-black bg-[#ece8f8] p-5">
+                <Text as="h3" className="text-2xl font-bold text-black">
+                  Project Requirements
+                </Text>
 
-            <button
-              type="button"
-              onClick={handlePlaceOrder}
-              disabled={isSubmitting}
-              className="flex h-[60px] w-full max-w-[700px] items-center justify-center rounded-full bg-[#ff6f73] px-8 text-lg font-semibold text-white transition hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? "Creating order..." : `Place Order ($${totalPrice})`}
-            </button>
-
-            {submitError && (
-              <Text as="p" className="mt-3 text-sm text-red-600">
-                {submitError}
-              </Text>
-            )}
-
-            <div className="mt-5 flex w-full max-w-[700px] items-center justify-center gap-5 text-sm text-muted-foreground">
-              <span>PayPal</span>
-              <span>VISA</span>
-              <span>MasterCard</span>
-              <span>Apple Pay</span>
-            </div>
-          </section>
-
-          <aside className="flex justify-start lg:justify-end">
-            <div className="w-full max-w-[360px] rounded-2xl border border-border bg-background p-5">
-              <Text as="h2" className="mb-5 text-xl font-semibold">
-                Order Summary
-              </Text>
-
-              <div className="mb-6 h-[230px] w-full overflow-hidden rounded-xl border border-border bg-muted">
-                <img
-                  src={summaryImg}
-                  alt="Order summary preview"
-                  className="h-full w-full object-cover"
+                <textarea
+                  value={requirements}
+                  onChange={(e) => setRequirements(e.target.value)}
+                  placeholder="Enter any specific project requirements here..."
+                  className="mt-4 min-h-[180px] w-full resize-none border-2 border-black bg-[#f7f7f7] p-4 text-lg text-black outline-none placeholder:text-[#6d5ab3]"
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <Text as="p" className="font-medium">
-                  Total
-                </Text>
-                <Text as="p" className="font-medium">
-                  ${totalPrice} USD
-                </Text>
+              <div className="border-2 border-black bg-[#ece8f8] p-5">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-lg">
+                    <Text as="span" className="text-[#5f43b2]">
+                      Base Price
+                    </Text>
+                    <Text as="span" className="font-semibold text-black">
+                      ${gig.price}
+                    </Text>
+                  </div>
+
+                  <div className="flex items-center justify-between text-lg">
+                    <Text as="span" className="text-[#5f43b2]">
+                      Quantity
+                    </Text>
+                    <Text as="span" className="font-semibold text-black">
+                      {quantity}
+                    </Text>
+                  </div>
+
+                  <div className="flex items-center justify-between text-lg">
+                    <Text as="span" className="text-[#5f43b2]">
+                      Delivery
+                    </Text>
+                    <Text as="span" className="font-semibold text-black">
+                      {gig.delivery}
+                    </Text>
+                  </div>
+
+                  <div className="border-t-2 border-black pt-4">
+                    <div className="flex items-center justify-between">
+                      <Text as="span" className="text-2xl font-bold text-black">
+                        Total
+                      </Text>
+                      <Text as="span" className="text-2xl font-bold text-black">
+                        ${totalPrice}
+                      </Text>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handlePlaceOrder}
+                  className="mt-6 flex h-14 w-full items-center justify-center border-2 border-black bg-[#c9a7ff] text-lg font-semibold text-black shadow-[3px_3px_0_0_#000] transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none"
+                >
+                  Continue to Payment
+                </button>
               </div>
             </div>
-          </aside>
+          </div>
         </div>
       </div>
     </main>
