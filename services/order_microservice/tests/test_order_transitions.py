@@ -137,3 +137,64 @@ def test_cancel_invalid_transition_from_completed_409(client, create_order_recor
     order = create_order_record(status=models.OrderStatus.COMPLETED)
     response = client.patch(f"/orders/{order.id}/cancel")
     assert response.status_code == 409
+
+
+def test_payment_result_held_moves_to_in_progress(client, create_order_record, publisher_mocks, db_session):
+    order = create_order_record(status=models.OrderStatus.PENDING_PAYMENT)
+    response = client.patch(
+        f"/orders/{order.id}/payment-result",
+        json={"payment_id": 9001, "payment_status": "held"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == models.OrderStatus.IN_PROGRESS.value
+    assert response.json()["payment_transaction_id"] == "9001"
+
+    db_session.expire_all()
+    updated = db_session.query(models.Order).filter(models.Order.id == order.id).first()
+    assert updated.status == models.OrderStatus.IN_PROGRESS
+    assert updated.payment_transaction_id == "9001"
+    publisher_mocks["status_updated"].assert_called_once()
+    publisher_mocks["confirmed"].assert_called_once()
+
+
+def test_payment_result_failed_moves_to_payment_failed(client, create_order_record, publisher_mocks, db_session):
+    order = create_order_record(status=models.OrderStatus.PENDING_PAYMENT)
+    response = client.patch(
+        f"/orders/{order.id}/payment-result",
+        json={"payment_id": 9002, "payment_status": "failed"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == models.OrderStatus.PAYMENT_FAILED.value
+    assert response.json()["payment_transaction_id"] == "9002"
+
+    db_session.expire_all()
+    updated = db_session.query(models.Order).filter(models.Order.id == order.id).first()
+    assert updated.status == models.OrderStatus.PAYMENT_FAILED
+    publisher_mocks["status_updated"].assert_called_once()
+    publisher_mocks["confirmed"].assert_not_called()
+
+
+def test_payment_release_result_from_delivered_completes_order(client, create_order_record, publisher_mocks, db_session):
+    order = create_order_record(status=models.OrderStatus.DELIVERED)
+    response = client.patch(
+        f"/orders/{order.id}/payment-release-result",
+        json={"payment_id": 9100, "payment_status": "released"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == models.OrderStatus.COMPLETED.value
+    assert response.json()["payment_transaction_id"] == "9100"
+
+    db_session.expire_all()
+    updated = db_session.query(models.Order).filter(models.Order.id == order.id).first()
+    assert updated.status == models.OrderStatus.COMPLETED
+    publisher_mocks["completed"].assert_called_once()
+    publisher_mocks["status_updated"].assert_called_once()
+
+
+def test_payment_release_result_invalid_status_409(client, create_order_record):
+    order = create_order_record(status=models.OrderStatus.IN_PROGRESS)
+    response = client.patch(
+        f"/orders/{order.id}/payment-release-result",
+        json={"payment_id": 9101, "payment_status": "released"},
+    )
+    assert response.status_code == 409

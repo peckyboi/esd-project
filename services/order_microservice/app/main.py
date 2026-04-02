@@ -1,4 +1,3 @@
-import os
 import time
 from datetime import datetime, timezone
 from typing import Optional
@@ -6,7 +5,7 @@ from typing import Optional
 from fastapi import Depends, FastAPI, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app import database, models, rabbitmq_consumer, rabbitmq_pub, schemas
+from app import database, models, rabbitmq_pub, schemas
 
 app = FastAPI(title="Order Microservice")
 
@@ -33,12 +32,26 @@ def _get_order_or_404(db: Session, order_id: int):
     return order
 
 
-def _enforce_transition(current: models.OrderStatus, target: models.OrderStatus):
-    allowed = ALLOWED_TRANSITIONS.get(current, set())
-    if target not in allowed:
+def _to_order_status(value) -> models.OrderStatus:
+    if isinstance(value, models.OrderStatus):
+        return value
+    try:
+        return models.OrderStatus(value)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown order status: {value}",
+        )
+
+
+def _enforce_transition(current, target):
+    current_status = _to_order_status(current)
+    target_status = _to_order_status(target)
+    allowed = ALLOWED_TRANSITIONS.get(current_status, set())
+    if target_status not in allowed:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Invalid status transition: {current.value} -> {target.value}",
+            detail=f"Invalid status transition: {current_status.value} -> {target_status.value}",
         )
 
 #api endpoints
@@ -63,7 +76,6 @@ def startup_event():
             time.sleep(wait_time)
     
     models.Base.metadata.create_all(bind=database.engine)
-    rabbitmq_consumer.start_consumer_in_background()
 
 
 @app.get("/health")
@@ -79,6 +91,7 @@ def create_order(order_request: schemas.OrderCreate, db: Session = Depends(datab
             freelancer_id=order_request.freelancer_id,
             gig_id=order_request.gig_id,
             price=order_request.price,
+            order_description=order_request.order_description,
         )
 
         db.add(new_order)
@@ -140,6 +153,37 @@ def approve_order(order_id: int, db: Session = Depends(database.get_db)):
     order = _get_order_or_404(db, order_id)
     _enforce_transition(order.status, models.OrderStatus.COMPLETED)
     order.status = models.OrderStatus.COMPLETED
+    db.commit()
+    db.refresh(order)
+    try:
+        rabbitmq_pub.publish_order_completed_event(order)
+        rabbitmq_pub.publish_order_status_updated_event(order)
+    except Exception as err:
+        print(f"Failed to publish to RabbitMQ: {err}")
+    return order
+
+
+@app.patch("/orders/{order_id}/payment-release-result", response_model=schemas.OrderResponse)
+def apply_payment_release_result(
+    order_id: int,
+    request: schemas.PaymentReleaseResultRequest,
+    db: Session = Depends(database.get_db),
+):
+    order = _get_order_or_404(db, order_id)
+    if request.payment_status != schemas.PaymentReleaseStatus.RELEASED:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="payment_status must be released")
+
+    current_status = _to_order_status(order.status)
+    if current_status == models.OrderStatus.DELIVERED:
+        _enforce_transition(order.status, models.OrderStatus.COMPLETED)
+        order.status = models.OrderStatus.COMPLETED
+    elif current_status != models.OrderStatus.COMPLETED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot apply payment release for order status: {current_status.value}",
+        )
+
+    order.payment_transaction_id = str(request.payment_id)
     db.commit()
     db.refresh(order)
     try:
@@ -217,15 +261,28 @@ def cancel_order(order_id: int, db: Session = Depends(database.get_db)):
         print(f"Failed to publish to RabbitMQ: {err}")
     return order
 
-#temporary endpoint to simulate payment success
-@app.patch("/orders/{order_id}/payment-success", response_model=schemas.OrderResponse)
-def payment_success(order_id: int, db: Session = Depends(database.get_db)):
-    if os.getenv("ENABLE_DEV_ENDPOINTS", "false").lower() != "true":
-        raise HTTPException(status_code=404, detail="Not found")
-    
+
+@app.patch("/orders/{order_id}/payment-result", response_model=schemas.OrderResponse)
+def apply_payment_result(
+    order_id: int,
+    request: schemas.PaymentResultRequest,
+    db: Session = Depends(database.get_db),
+):
     order = _get_order_or_404(db, order_id)
-    _enforce_transition(order.status, models.OrderStatus.IN_PROGRESS)
-    order.status = models.OrderStatus.IN_PROGRESS
+    target_status = (
+        models.OrderStatus.IN_PROGRESS
+        if request.payment_status == schemas.PaymentResultStatus.HELD
+        else models.OrderStatus.PAYMENT_FAILED
+    )
+    _enforce_transition(order.status, target_status)
+    order.status = target_status
+    order.payment_transaction_id = str(request.payment_id)
     db.commit()
     db.refresh(order)
+    try:
+        rabbitmq_pub.publish_order_status_updated_event(order)
+        if target_status == models.OrderStatus.IN_PROGRESS:
+            rabbitmq_pub.publish_order_confirmed_event(order)
+    except Exception as err:
+        print(f"Failed to publish to RabbitMQ: {err}")
     return order
