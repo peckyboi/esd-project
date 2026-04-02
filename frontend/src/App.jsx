@@ -9,7 +9,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomePage />} />
-      <Route path="/gig/:id" element={<GigDetailPage />} />
+      <Route path="/gig/:gigId" element={<GigDetailPage />} />
       <Route path="/place-order" element={<PlaceOrderPage />} />
       <Route path="/payment" element={<PaymentPage />} />
     </Routes>

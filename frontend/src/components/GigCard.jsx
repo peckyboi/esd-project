@@ -5,12 +5,12 @@ import { Avatar } from "@/components/retroui/Avatar";
 import { Link } from "react-router-dom";
 import gigPlaceholder from "@/assets/gig-placeholder.svg";
 
-export default function GigCard({ gig }) {
+export default function GigCard({ gig, onClick }) {
   return (
-    <Card className="w-full rounded-none">
+    <Card onClick={onClick} className="w-full rounded-none">
       <Card.Content className="p-5">
         <img
-          src={gigPlaceholder}
+          src={gig.image_url || gigPlaceholder}
           alt="Gig placeholder"
           className="mb-3 h-32 w-full rounded-sm border-2 border-border object-cover"
         />
@@ -24,7 +24,7 @@ export default function GigCard({ gig }) {
             ${gig.price}
           </Text>
           <Text as="p" className="text-sm text-muted-foreground">
-            {gig.delivery}
+            {gig.delivery_days} day{gig.delivery_days > 1 ? "s" : ""} delivery
           </Text>
         </div>
 
@@ -32,17 +32,18 @@ export default function GigCard({ gig }) {
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
               <Avatar.Fallback className="text-xs">
-                {gig.freelancer[0]}
+                {gig.avatar ? (<img src={gig.avatar} alt={gig.freelancer_name}
+                />) : (gig.freelancer_name.charAt(0))}
               </Avatar.Fallback>
             </Avatar>
 
             <Text as="p" className="text-sm">
-              {gig.freelancer}
+              {gig.freelancer_name}
             </Text>
           </div>
 
           <Text as="p" className="text-sm">
-            ★ {gig.rating}
+            ★ {gig.average_rating != null? gig.average_rating.toFixed(1) : "No ratings"}
           </Text>
         </div>
 

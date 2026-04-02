@@ -62,6 +62,8 @@ class GigListing(BaseModel):
     delivery_days: int
     freelancer_name: str
     avatar: Optional[str] = None
+    category: str
+    image_url: str
     average_rating: Optional[float] = Field(None, description="Average rating for this gig (1-5)")
     review_count: int = Field(default=0, description="Number of reviews for this gig")
     review_list: list[ReviewItem] = Field(default_factory=list)
