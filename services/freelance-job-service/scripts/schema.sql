@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS gigs (
   price FLOAT NOT NULL,
   delivery_days INT NOT NULL,
   image_url VARCHAR(500)  DEFAULT NULL,
-  status ENUM('active', 'paused', 'deleted') NOT NULL DEFAULT 'active',
+  status VARCHAR(50) NOT NULL DEFAULT 'active',
   created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at DATETIME(6) NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (gig_id),
