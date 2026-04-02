@@ -16,7 +16,29 @@ USER_SERVICE_URL = os.getenv(
 )
 
 REQUEST_TIMEOUT = 10
+_shared_client: Optional[httpx.AsyncClient] = None
 
+def get_client() -> httpx.AsyncClient:
+    """Get a shared HTTP client instance for reuse across requests."""
+    if _shared_client is None:
+        raise RuntimeError("HTTP client not initialized. Call init_client() first.")
+    return _shared_client
+
+async def init_client():
+    """Initialize the shared HTTP client."""
+    global _shared_client
+    _shared_client = httpx.AsyncClient(
+        timeout=REQUEST_TIMEOUT, 
+        follow_redirects=True, 
+        limits=httpx.Limits(max_connections=100, max_keepalive_connections=20))
+
+async def close_client() -> None:
+    global _shared_client
+    if _shared_client is not None:
+        await _shared_client.aclose()
+        _shared_client = None
+        
+        
 class ServiceClient:
     """HTTP client for calling dependent microservices with explicit error raising"""
 
@@ -37,56 +59,31 @@ class ServiceClient:
         if max_price is not None: params["max_price"] = max_price
         if search: params["search"] = search
         if freelancer_id is not None: params["freelancer_id"] = freelancer_id
-
-        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT, follow_redirects=True) as client:
-            response = await client.get(
-                f"{FREELANCE_JOB_SERVICE_URL}/gigs/",
-                params=params
-            )
-            response.raise_for_status() 
-            return response.json()
+        r = await get_client().get(f"{FREELANCE_JOB_SERVICE_URL}/gigs/", params=params)
+        r.raise_for_status()
+        return r.json()
 
     @staticmethod
     async def get_gig_by_id(gig_id: int) -> Dict[str, Any]:
         """Fetch a specific gig. Raises exception if not found or service is down."""
-        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT, follow_redirects=True) as client:
-            response = await client.get(
-                f"{FREELANCE_JOB_SERVICE_URL}/gigs/{gig_id}"
-            )
-            response.raise_for_status()
-            return response.json()
-
-    @staticmethod
-    async def get_reviews_by_freelancer(freelancer_id: int) -> List[Dict[str, Any]]:
-        """Fetch reviews for a freelancer. Raises exception on communication failure."""
-        params = {"freelancerId": freelancer_id}
-        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT, follow_redirects=True) as client:
-            response = await client.get(
-                f"{REVIEW_SERVICE_URL}/reviews",
-                params=params
-            )
-            response.raise_for_status()
-            return response.json()
+        r = await get_client().get(f"{FREELANCE_JOB_SERVICE_URL}/gigs/{gig_id}")
+        r.raise_for_status()
+        return r.json()
 
     @staticmethod
     async def get_reviews_by_gig(gig_id: int) -> List[Dict[str, Any]]:
         """Fetch reviews for a specific gig. Raises exception on communication failure."""
         params = {"gigId": gig_id}
-        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT, follow_redirects=True) as client:
-            response = await client.get(
-                f"{REVIEW_SERVICE_URL}/reviews",
-                params=params,
-            )
-            response.raise_for_status()
-            return response.json()
+        r = await get_client().get(f"{REVIEW_SERVICE_URL}/reviews", params=params)
+        r.raise_for_status()
+        return r.json()
 
     @staticmethod
     async def get_user_info(user_id: int) -> Dict[str, Any]:
         """Fetch user profile from the user service. Raises exception on failure."""
-        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT, follow_redirects=True) as client:
-            response = await client.get(
-                f"{USER_SERVICE_URL}/user/{user_id}",
-                params={"UserId": user_id},
-            )
-            response.raise_for_status()
-            return response.json()
+        r = await get_client().get(
+            f"{USER_SERVICE_URL}/user/{user_id}",
+            params={"UserId": user_id},
+        )
+        r.raise_for_status()
+        return r.json()

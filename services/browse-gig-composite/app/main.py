@@ -3,7 +3,7 @@ import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.browse_gig_routes import router as browse_gig_router
-from app.http_client import FREELANCE_JOB_SERVICE_URL, REVIEW_SERVICE_URL
+from app.http_client import FREELANCE_JOB_SERVICE_URL, REVIEW_SERVICE_URL, init_client, close_client
 
 app = FastAPI(
     title="Browse Gig Composite Service",
@@ -22,6 +22,7 @@ app.include_router(browse_gig_router)
 
 @app.on_event("startup")
 async def startup():
+    await init_client()
     retries = 20
     dependencies = {
         "Freelance Job Service": f"{FREELANCE_JOB_SERVICE_URL}/health",
@@ -52,3 +53,7 @@ async def startup():
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "browse-gig-composite"}
+
+@app.on_event("shutdown")
+async def shutdown():
+    await close_client()
