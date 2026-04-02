@@ -58,7 +58,7 @@ pip install -r requirements.txt
 pytest tests/ -v
 ```
 
-Expected output: 11 tests passing
+Expected output: 12 tests passing
 
 > Tests use SQLite and do not require MySQL, Docker, or RabbitMQ.
 

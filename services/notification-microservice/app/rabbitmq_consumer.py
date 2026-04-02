@@ -51,6 +51,28 @@ def _handle_order_delivered(db, data: dict):
     )
 
 
+def _handle_order_completed(db, data: dict):
+    freelancer_id = data.get("freelancer_id")
+    client_id = data.get("client_id")
+    order_id = data.get("order_id")
+    if not order_id:
+        return
+    if freelancer_id:
+        _create_notification(
+            db,
+            user_id=freelancer_id,
+            order_id=order_id,
+            message=f"Order #{order_id} has been completed and payment has been released to you.",
+        )
+    if client_id:
+        _create_notification(
+            db,
+            user_id=client_id,
+            order_id=order_id,
+            message=f"Your order (Order #{order_id}) is now complete. Thank you!",
+        )
+
+
 def _handle_order_disputed(db, data: dict):
     freelancer_id = data.get("freelancer_id")
     order_id = data.get("order_id")
@@ -80,6 +102,7 @@ def _handle_order_cancelled(db, data: dict):
 EVENT_HANDLERS = {
     "OrderCreated": _handle_order_created,
     "OrderDelivered": _handle_order_delivered,
+    "OrderCompleted": _handle_order_completed,
     "OrderDisputed": _handle_order_disputed,
     "OrderCancelled": _handle_order_cancelled,
 }
