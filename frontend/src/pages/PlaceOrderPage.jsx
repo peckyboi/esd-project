@@ -1,14 +1,15 @@
 import { useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
 import { Star } from "lucide-react";
 import summaryImg from "@/assets/_.jpeg";
 
 function PlaceOrderPage() {
-  const [quantity, setQuantity] = useState(1);
-  const [requirements, setRequirements] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const gig = {
+  const fallbackGig = {
     freelancer: "Alice Williams",
     rating: 4.7,
     description:
@@ -16,6 +17,11 @@ function PlaceOrderPage() {
     delivery: "3 days (active)",
     price: 495
   };
+
+  const gig = location.state?.gig || fallbackGig;
+
+  const [quantity, setQuantity] = useState(1);
+  const [requirements, setRequirements] = useState("");
 
   const totalPrice = useMemo(() => gig.price * quantity, [gig.price, quantity]);
 
@@ -27,140 +33,148 @@ function PlaceOrderPage() {
     setQuantity((prev) => prev + 1);
   };
 
+  const handlePlaceOrder = () => {
+    navigate("/payment", {
+      state: {
+        gig,
+        quantity,
+        requirements,
+        totalPrice
+      }
+    });
+  };
+
   return (
-    <main className="min-h-screen w-full bg-background text-foreground">
-      <section className="min-h-screen w-full overflow-hidden bg-background px-8 py-10">
-        <div className="mx-auto min-h-[1000px] w-full max-w-[1440px] bg-black px-14 py-12">
-          <div className="grid grid-cols-1 gap-10 xl:grid-cols-[1.7fr_0.9fr]">
-            <section className="pt-2">
-              <Text as="h1" className="mb-12 text-5xl font-semibold text-white">
-                Place Order
+    <main className="min-h-screen w-full bg-background text-foreground p-6">
+      <div className="mx-auto max-w-6xl rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="grid gap-8 lg:grid-cols-[1.7fr_0.9fr]">
+          <section>
+            <Text as="h1" className="mb-10 text-4xl font-semibold">
+              Place Order
+            </Text>
+
+            <div className="mb-10 flex items-start gap-4">
+              <Avatar className="h-12 w-12 border border-border bg-muted">
+                <Avatar.Fallback className="bg-transparent text-foreground">
+                  AW
+                </Avatar.Fallback>
+              </Avatar>
+
+              <div>
+                <Text as="p" className="text-xl font-medium">
+                  {gig.freelancer}
+                </Text>
+
+                <div className="mt-1 flex items-center gap-1">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <Text as="span" className="text-sm">
+                    {gig.rating}
+                  </Text>
+                </div>
+
+                <Text
+                  as="p"
+                  className="mt-3 max-w-[460px] text-sm leading-6 text-muted-foreground"
+                >
+                  {gig.description}
+                </Text>
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <Text as="p" className="mb-3 text-sm font-medium">
+                Delivery Time
               </Text>
 
-              <div className="mb-14 flex items-start gap-4">
-                <Avatar className="h-12 w-12 border border-white/20 bg-zinc-200">
-                  <Avatar.Fallback className="bg-zinc-200 text-transparent">
-                    AW
-                  </Avatar.Fallback>
-                </Avatar>
-
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Text as="p" className="text-xl font-medium text-white">
-                      {gig.freelancer}
-                    </Text>
-                  </div>
-
-                  <div className="mt-1 flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <Text as="span" className="text-sm text-white">
-                      {gig.rating}
-                    </Text>
-                  </div>
-
-                  <Text
-                    as="p"
-                    className="mt-3 max-w-[420px] text-base leading-6 text-white/75"
-                  >
-                    {gig.description}
-                  </Text>
-                </div>
+              <div className="flex h-[56px] w-full max-w-[760px] items-center rounded-xl border border-border bg-background px-2">
+                <button
+                  type="button"
+                  className="h-[40px] min-w-[190px] rounded-lg border border-orange-400 bg-transparent px-6 text-sm font-medium"
+                >
+                  {gig.delivery}
+                </button>
               </div>
+            </div>
 
-              <div className="mb-10">
-                <Text as="p" className="mb-4 text-lg font-medium text-white">
-                  Delivery Time
+            <div className="mb-12 flex w-full max-w-[760px] items-center justify-between gap-6">
+              <Text as="p" className="text-sm font-medium">
+                Number
+              </Text>
+
+              <div className="flex h-[56px] w-[220px] items-center justify-between rounded-xl border border-border bg-background px-6">
+                <button
+                  type="button"
+                  onClick={handleDecrease}
+                  className="text-2xl font-semibold transition hover:opacity-70"
+                >
+                  -
+                </button>
+
+                <Text as="span" className="text-xl font-medium">
+                  {quantity}
                 </Text>
 
-                <div className="flex h-[60px] w-full max-w-[760px] items-center bg-white/[0.06] px-2">
-                  <button
-                    type="button"
-                    className="h-[42px] min-w-[190px] border border-orange-400 bg-transparent px-6 text-base font-medium text-white"
-                  >
-                    {gig.delivery}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleIncrease}
+                  className="text-2xl font-semibold transition hover:opacity-70"
+                >
+                  +
+                </button>
               </div>
+            </div>
 
-              <div className="mb-20 flex w-full max-w-[760px] items-center justify-between gap-6">
-                <Text as="p" className="text-lg font-medium text-white">
-                  Number
-                </Text>
+            <div className="mb-8">
+              <textarea
+                value={requirements}
+                onChange={(e) => setRequirements(e.target.value)}
+                placeholder="Enter any specific project requirements here..."
+                className="h-[130px] w-full max-w-[600px] resize-none rounded-xl border border-border bg-background px-5 py-4 text-sm outline-none placeholder:text-muted-foreground"
+              />
+            </div>
 
-                <div className="flex h-[54px] w-[210px] items-center justify-between bg-white/[0.06] px-6">
-                  <button
-                    type="button"
-                    onClick={handleDecrease}
-                    className="text-3xl font-semibold text-white transition hover:opacity-70"
-                  >
-                    -
-                  </button>
+            <button
+              type="button"
+              onClick={handlePlaceOrder}
+              className="flex h-[60px] w-full max-w-[700px] items-center justify-center rounded-full bg-[#ff6f73] px-8 text-lg font-semibold text-white transition hover:opacity-90"
+            >
+              Place Order (${totalPrice})
+            </button>
 
-                  <Text as="span" className="text-2xl font-medium text-white">
-                    {quantity}
-                  </Text>
+            <div className="mt-5 flex w-full max-w-[700px] items-center justify-center gap-5 text-sm text-muted-foreground">
+              <span>PayPal</span>
+              <span>VISA</span>
+              <span>MasterCard</span>
+              <span>Apple Pay</span>
+            </div>
+          </section>
 
-                  <button
-                    type="button"
-                    onClick={handleIncrease}
-                    className="text-3xl font-semibold text-white transition hover:opacity-70"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+          <aside className="flex justify-start lg:justify-end">
+            <div className="w-full max-w-[360px] rounded-2xl border border-border bg-background p-5">
+              <Text as="h2" className="mb-5 text-xl font-semibold">
+                Order Summary
+              </Text>
 
-              <div className="mb-8">
-                <textarea
-                  value={requirements}
-                  onChange={(e) => setRequirements(e.target.value)}
-                  placeholder="Enter any specific project requirements here..."
-                  className="h-[120px] w-full max-w-[580px] resize-none border-none bg-white/[0.06] px-6 py-4 text-sm text-white placeholder:text-white/45 focus:outline-none"
+              <div className="mb-6 h-[230px] w-full overflow-hidden rounded-xl border border-border bg-muted">
+                <img
+                  src={summaryImg}
+                  alt="Order summary preview"
+                  className="h-full w-full object-cover"
                 />
               </div>
 
-              <button
-                type="button"
-                className="flex h-[64px] w-full max-w-[690px] items-center justify-center rounded-full bg-[#ff6f73] px-8 text-[20px] font-semibold text-white transition hover:opacity-90"
-              >
-                Place Order (${totalPrice})
-              </button>
-
-              <div className="mt-5 flex w-full max-w-[690px] items-center justify-center gap-5 text-sm text-white/70">
-                <span>PayPal</span>
-                <span>VISA</span>
-                <span>MasterCard</span>
-                <span>Apple Pay</span>
-              </div>
-            </section>
-
-            <aside className="flex justify-start xl:justify-end">
-              <div className="mt-12 w-full max-w-[370px] rounded-[20px] bg-white/[0.08] px-5 py-6">
-                <Text as="h2" className="mb-5 text-2xl font-semibold text-white">
-                  Order Summary
+              <div className="flex items-center justify-between">
+                <Text as="p" className="font-medium">
+                  Total
                 </Text>
-
-                <div className="mb-10 h-[250px] w-full overflow-hidden rounded-[4px] bg-[#111827]">
-                  <img
-                    src={summaryImg}
-                    alt="Order summary preview"
-                    className="h-full w-full object-cover opacity-80"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between px-2">
-                  <Text as="p" className="text-xl font-medium text-white">
-                    Total
-                  </Text>
-                  <Text as="p" className="text-xl font-medium text-white">
-                    ${totalPrice} USD
-                  </Text>
-                </div>
+                <Text as="p" className="font-medium">
+                  ${totalPrice} USD
+                </Text>
               </div>
-            </aside>
-          </div>
+            </div>
+          </aside>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
