@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { fetchGigById } from "@/api/browseGigApi";
 
 function GigDetailPage() {
+    const navigate = useNavigate();
     const { gigId } = useParams();
     
     const [gig, setGig] = useState(null);
@@ -35,9 +36,6 @@ function GigDetailPage() {
         load();
     }, [gigId]);
 
-    const handleOrderNow = () => {
-        navigate("/place-order", { state: { gig } });
-    };
 
     if (loading) {
         return (
@@ -87,7 +85,7 @@ function GigDetailPage() {
         <GigDescription description={gig.description} />
 
         {orderStatus === null && (
-          <Button onClick={handleOrderNow}>Order Now</Button>
+          <Button onClick={() => navigate(`/place-order/${gig.gig_id}`)}>Order Now</Button>
         )}
 
         {orderStatus === "in_progress" && (
