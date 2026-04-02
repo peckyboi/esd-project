@@ -86,3 +86,8 @@ def publish_order_cancelled_event(order):
 def publish_order_status_updated_event(order):
     event_id = _publish_event("OrderStatusUpdated", _base_order_data(order))
     print(f"Sent 'OrderStatusUpdated' event for Order ID: {order.id}, event_id: {event_id}")
+
+
+def publish_order_confirmed_event(order):
+    event_id = _publish_event("OrderConfirmed", _base_order_data(order))
+    print(f"Sent 'OrderConfirmed' event for Order ID: {order.id}, event_id: {event_id}")

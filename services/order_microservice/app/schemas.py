@@ -1,3 +1,4 @@
+import enum
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
@@ -22,6 +23,25 @@ class DisputeOrderRequest(BaseModel):
 class SettleOrderRequest(BaseModel):
     final_status: OrderStatus
     settlement_amount: Optional[float] = None
+
+
+class PaymentResultStatus(str, enum.Enum):
+    HELD = "held"
+    FAILED = "failed"
+
+
+class PaymentResultRequest(BaseModel):
+    payment_id: int
+    payment_status: PaymentResultStatus
+
+
+class PaymentReleaseStatus(str, enum.Enum):
+    RELEASED = "released"
+
+
+class PaymentReleaseResultRequest(BaseModel):
+    payment_id: int
+    payment_status: PaymentReleaseStatus
 
 
 #what we return the client 

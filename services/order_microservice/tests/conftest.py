@@ -37,7 +37,6 @@ main_module.app.dependency_overrides[database.get_db] = override_get_db
 #provides client for calling endpoints
 @pytest.fixture
 def client(monkeypatch):
-    monkeypatch.setattr(main_module.rabbitmq_consumer, "start_consumer_in_background", lambda: None)
     with TestClient(main_module.app) as test_client:
         yield test_client
 
@@ -53,7 +52,6 @@ def db_session():
 
 @pytest.fixture(autouse=True)
 def reset_db(db_session):
-    db_session.query(models.ProcessedEvent).delete()
     db_session.query(models.Order).delete()
     db_session.commit()
 
@@ -99,6 +97,7 @@ def publisher_mocks(monkeypatch):
     disputed = Mock()
     cancelled = Mock()
     status_updated = Mock()
+    confirmed = Mock()
 
     monkeypatch.setattr(main_module.rabbitmq_pub, "publish_order_created_event", created)
     monkeypatch.setattr(main_module.rabbitmq_pub, "publish_order_delivered_event", delivered)
@@ -106,6 +105,7 @@ def publisher_mocks(monkeypatch):
     monkeypatch.setattr(main_module.rabbitmq_pub, "publish_order_disputed_event", disputed)
     monkeypatch.setattr(main_module.rabbitmq_pub, "publish_order_cancelled_event", cancelled)
     monkeypatch.setattr(main_module.rabbitmq_pub, "publish_order_status_updated_event", status_updated)
+    monkeypatch.setattr(main_module.rabbitmq_pub, "publish_order_confirmed_event", confirmed)
 
     return {
         "created": created,
@@ -114,4 +114,5 @@ def publisher_mocks(monkeypatch):
         "disputed": disputed,
         "cancelled": cancelled,
         "status_updated": status_updated,
+        "confirmed": confirmed,
     }
