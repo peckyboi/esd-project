@@ -16,7 +16,7 @@ const gig = {
     deliveryTime: "3 days",
     status: "disputed",
     statusMessage: "Client has raised a dispute. Resolve through chat or issue a refund.",
-    actionPrimary: "Resolve via Chat",
+    actionPrimary: "Resolve Dispute",
     actionSecondary: "Issue Refund",
     actionMessage: "Disputes are handled through direct communication. If unresolved, refund is processed."
 };
