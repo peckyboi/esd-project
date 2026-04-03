@@ -4,17 +4,22 @@ import GigDetailPage from "./pages/GigDetailPage";
 import UserProfilePage from "./pages/UserProfilePage";
 import PlaceOrderPage from "./pages/PlaceOrderPage";
 import PaymentPage from "./pages/PaymentPage";
+import AppTopBar from "@/components/AppTopBar";
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/home" replace />} />
-      <Route path="/home" element={<HomePage />} />
-      <Route path="/profile" element={<UserProfilePage />} />
-      <Route path="/gig/:gigId" element={<GigDetailPage />} />
-      <Route path="/place-order" element={<PlaceOrderPage />} />
-      <Route path="/payment" element={<PaymentPage />} />
-    </Routes>
+    <div className="min-h-screen w-full overflow-hidden bg-background">
+      <AppTopBar />
+
+      <Routes>
+        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/profile" element={<UserProfilePage />} />
+        <Route path="/gig/:gigId" element={<GigDetailPage />} />
+        <Route path="/place-order/:gigId" element={<PlaceOrderPage />} />
+        <Route path="/payment" element={<PaymentPage />} />
+      </Routes>
+    </div>
   );
 }
 

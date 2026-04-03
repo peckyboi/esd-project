@@ -56,6 +56,7 @@ class UserInfo(BaseModel):
 class GigListing(BaseModel):
     """Aggregated gig listing with freelancer and review information"""
     gig_id: int
+    freelancer_id: int
     title: str
     description: str
     price: float
