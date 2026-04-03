@@ -1,166 +1,287 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Button } from "@/components/retroui/Button";
 import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
-import { Star } from "lucide-react";
-import summaryImg from "@/assets/_.jpeg";
+import { Star, Clock3 } from "lucide-react";
+import { createOrder } from "@/api/orderApi";
+import { useActor } from "@/context/actorContext";
+
+function getDeliveryText(gig) {
+  if (gig && gig.delivery) return gig.delivery;
+  if (gig && typeof gig.delivery_days === "number") {
+    return gig.delivery_days === 1 ? "1 day delivery" : `${gig.delivery_days} days delivery`;
+  }
+  return "N/A";
+}
 
 function PlaceOrderPage() {
-  const [quantity, setQuantity] = useState(1);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { role, resolvedUserId } = useActor();
+  const state = location.state || {};
+  const gig = state.gig || null;
+
   const [requirements, setRequirements] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
-  const gig = {
-    freelancer: "Alice Williams",
-    rating: 4.7,
-    description:
-      "I will design a beautiful, modern UI for desktop, iOS, or Android apps using Figma",
-    delivery: "3 days (active)",
-    price: 495
+  const totalPrice = gig && typeof gig.price === "number" ? gig.price : 0;
+  const previewImage = gig ? (gig.image_url || gig.image || null) : null;
+  const deliveryText = getDeliveryText(gig);
+  const gigId = gig ? (gig.gig_id || gig.id) : null;
+  const backPath = gigId ? `/gig/${gigId}` : "/home";
+  const freelancerName = gig ? (gig.freelancer_name || gig.freelancer || "Unknown Freelancer") : "";
+  const gigTitle = gig ? gig.title : "";
+  const gigRating = gig ? (gig.average_rating || gig.rating || "N/A") : "N/A";
+  const gigDescription = gig ? (gig.description || "No description available.") : "";
+
+  const handlePlaceOrder = async () => {
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      if (!gig) {
+        throw new Error("Missing gig data. Please start from the gig details page.");
+      }
+      if (role !== "client") {
+        throw new Error("Switch role to client on Home before placing an order.");
+      }
+      if (!resolvedUserId) {
+        throw new Error("Set a valid user id on Home before placing an order.");
+      }
+
+      const gigId = gig.gig_id || gig.id;
+      const clientId = resolvedUserId;
+      const freelancerId = gig.freelancer_id || gig.user_id;
+      if (!gigId) {
+        throw new Error("Missing gig id. Please start from a gig details page.");
+      }
+      if (!clientId) {
+        throw new Error("Missing client id.");
+      }
+      if (!freelancerId) {
+        throw new Error("Missing freelancer id.");
+      }
+
+      const order = await createOrder({
+        clientId,
+        freelancerId,
+        gigId,
+        price: totalPrice,
+        orderDescription: requirements || null,
+      });
+
+      navigate("/payment", {
+        state: {
+          gig,
+          requirements,
+          totalPrice,
+          orderId: order.id,
+        }
+      });
+    } catch (err) {
+      setSubmitError(err.message || "Failed to create order");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const totalPrice = useMemo(() => gig.price * quantity, [gig.price, quantity]);
-
-  const handleDecrease = () => {
-    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
-  };
-
-  const handleIncrease = () => {
-    setQuantity((prev) => prev + 1);
-  };
+  if (!gig) {
+    return (
+      <main className="min-h-screen bg-background p-6">
+        <div className="mx-auto max-w-3xl border-2 border-black bg-[#f7f7f7] p-6 shadow-[6px_6px_0_0_#000]">
+          <Text as="h1" className="text-3xl font-bold text-black">
+            Place Order
+          </Text>
+          <Text as="p" className="mt-3 text-lg text-red-600">
+            Missing gig data. Please return to the gig details page and click Order Now again.
+          </Text>
+          <button
+            type="button"
+            onClick={() => navigate("/home")}
+            className="mt-6 flex h-12 items-center justify-center border-2 border-black bg-[#c9a7ff] px-6 font-semibold text-black shadow-[3px_3px_0_0_#000]"
+          >
+            Back to Home
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-screen w-full bg-background text-foreground">
-      <section className="min-h-screen w-full overflow-hidden bg-background px-8 py-10">
-        <div className="mx-auto min-h-[1000px] w-full max-w-[1440px] bg-black px-14 py-12">
-          <div className="grid grid-cols-1 gap-10 xl:grid-cols-[1.7fr_0.9fr]">
-            <section className="pt-2">
-              <Text as="h1" className="mb-12 text-5xl font-semibold text-white">
-                Place Order
+    <main className="min-h-screen bg-background p-6">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Link to={backPath}>
+          <Button variant="outline">← Back to Gig</Button>
+        </Link>
+
+        {/* Full-width gig box */}
+        <div className="border-2 border-black bg-[#f7f7f7] p-6 shadow-[6px_6px_0_0_#000] mt-6">
+          <div className="flex items-start gap-5">
+            <Avatar className="h-16 w-16 rounded-none border-2 border-black bg-[#ddd5f3]">
+              <Avatar.Fallback className="bg-transparent text-xl text-black">
+                {freelancerName.charAt(0) || "A"}
+              </Avatar.Fallback>
+            </Avatar>
+
+            <div className="flex-1">
+              <Text as="h2" className="text-4xl font-bold leading-tight text-black">
+                {gigTitle}
               </Text>
 
-              <div className="mb-14 flex items-start gap-4">
-                <Avatar className="h-12 w-12 border border-white/20 bg-zinc-200">
-                  <Avatar.Fallback className="bg-zinc-200 text-transparent">
-                    AW
-                  </Avatar.Fallback>
-                </Avatar>
+              <div className="mt-4 flex flex-wrap items-center gap-5">
+                <Text as="span" className="text-xl text-black">
+                  {freelancerName}
+                </Text>
 
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Text as="p" className="text-xl font-medium text-white">
-                      {gig.freelancer}
-                    </Text>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  <Text as="span" className="text-xl text-[#5f43b2]">
+                    {gigRating}
+                  </Text>
+                </div>
 
-                  <div className="mt-1 flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <Text as="span" className="text-sm text-white">
-                      {gig.rating}
-                    </Text>
-                  </div>
-
-                  <Text
-                    as="p"
-                    className="mt-3 max-w-[420px] text-base leading-6 text-white/75"
-                  >
-                    {gig.description}
+                <div className="flex items-center gap-2">
+                  <Clock3 className="h-5 w-5 text-[#5f43b2]" />
+                  <Text as="span" className="text-xl text-[#5f43b2]">
+                    {deliveryText}
                   </Text>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
 
-              <div className="mb-10">
-                <Text as="p" className="mb-4 text-lg font-medium text-white">
-                  Delivery Time
-                </Text>
+        {/* Horizontal Order Summary Section (Main Box) */}
+        <div className="border-2 border-black bg-[#f7f7f7] p-6 shadow-[6px_6px_0_0_#000]">
+          <Text as="h2" className="text-3xl font-bold text-black">
+            Order Summary
+          </Text>
 
-                <div className="flex h-[60px] w-full max-w-[760px] items-center bg-white/[0.06] px-2">
-                  <button
-                    type="button"
-                    className="h-[42px] min-w-[190px] border border-orange-400 bg-transparent px-6 text-base font-medium text-white"
-                  >
-                    {gig.delivery}
-                  </button>
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1.05fr_1fr]">
+            {/* Left subpane: preview + description */}
+            <div className="space-y-4">
+              <div className="border-2 border-black bg-[#dfe5f4] p-4 shadow-[4px_4px_0_0_#000]">
+                <div className="border-[4px] border-black bg-[#d7dff0] p-4">
+                  <div className="mb-3 space-y-2">
+                    <div className="h-3 w-[42%] bg-[#c4cee8]" />
+                    <div className="h-3 w-[30%] bg-[#cfd8ee]" />
+                  </div>
+
+                  <div className="h-[220px] overflow-hidden bg-[#6679a7]">
+                    {previewImage ? (
+                      <img
+                        src={previewImage}
+                        alt={gig.title || "Gig preview"}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <Text as="span" className="text-4xl font-bold tracking-wide text-white">
+                          GIG PREVIEW
+                        </Text>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex gap-3">
+                    <div className="h-4 w-[120px] bg-[#a78bfa]" />
+                    <div className="h-4 w-[85px] bg-[#a78bfa]" />
+                  </div>
                 </div>
               </div>
 
-              <div className="mb-20 flex w-full max-w-[760px] items-center justify-between gap-6">
-                <Text as="p" className="text-lg font-medium text-white">
-                  Number
+              <div className="border-2 border-black bg-[#ece8f8] p-5">
+                <Text as="h3" className="text-2xl font-bold text-black">
+                  Order Details
                 </Text>
 
-                <div className="flex h-[54px] w-[210px] items-center justify-between bg-white/[0.06] px-6">
-                  <button
-                    type="button"
-                    onClick={handleDecrease}
-                    className="text-3xl font-semibold text-white transition hover:opacity-70"
-                  >
-                    -
-                  </button>
-
-                  <Text as="span" className="text-2xl font-medium text-white">
-                    {quantity}
+                <div className="mt-5">
+                  <Text as="label" className="mb-3 block text-lg text-black">
+                    Delivery Time
                   </Text>
-
-                  <button
-                    type="button"
-                    onClick={handleIncrease}
-                    className="text-3xl font-semibold text-white transition hover:opacity-70"
-                  >
-                    +
-                  </button>
+                  <div className="flex h-14 items-center border-2 border-black bg-[#f7f7f7] px-4 text-lg text-black">
+                    {deliveryText}
+                  </div>
                 </div>
               </div>
 
-              <div className="mb-8">
+              <div className="border-2 border-black bg-[#ece8f8] p-4">
+                <Text as="h3" className="text-lg font-semibold text-black">
+                  Description
+                </Text>
+
+                <Text as="p" className="mt-2 text-base leading-7 text-[#5f43b2]">
+                  {gigDescription}
+                </Text>
+              </div>
+            </div>
+
+            {/* Right pane: details + requirements + total */}
+            <div className="space-y-5">
+              <div className="border-2 border-black bg-[#ece8f8] p-5">
+                <Text as="h3" className="text-2xl font-bold text-black">
+                  Project Requirements
+                </Text>
+
                 <textarea
                   value={requirements}
                   onChange={(e) => setRequirements(e.target.value)}
                   placeholder="Enter any specific project requirements here..."
-                  className="h-[120px] w-full max-w-[580px] resize-none border-none bg-white/[0.06] px-6 py-4 text-sm text-white placeholder:text-white/45 focus:outline-none"
+                  className="mt-4 min-h-[180px] w-full resize-none border-2 border-black bg-[#f7f7f7] p-4 text-lg text-black outline-none placeholder:text-[#6d5ab3]"
                 />
-              </div>
 
-              <button
-                type="button"
-                className="flex h-[64px] w-full max-w-[690px] items-center justify-center rounded-full bg-[#ff6f73] px-8 text-[20px] font-semibold text-white transition hover:opacity-90"
-              >
-                Place Order (${totalPrice})
-              </button>
+                <div className="mt-5 space-y-4">
+                  <div className="flex items-center justify-between text-lg">
+                    <Text as="span" className="text-[#5f43b2]">
+                      Base Price
+                    </Text>
+                    <Text as="span" className="font-semibold text-black">
+                      ${totalPrice}
+                    </Text>
+                  </div>
 
-              <div className="mt-5 flex w-full max-w-[690px] items-center justify-center gap-5 text-sm text-white/70">
-                <span>PayPal</span>
-                <span>VISA</span>
-                <span>MasterCard</span>
-                <span>Apple Pay</span>
-              </div>
-            </section>
+                  <div className="flex items-center justify-between text-lg">
+                    <Text as="span" className="text-[#5f43b2]">
+                      Delivery
+                    </Text>
+                    <Text as="span" className="font-semibold text-black">
+                      {deliveryText}
+                    </Text>
+                  </div>
 
-            <aside className="flex justify-start xl:justify-end">
-              <div className="mt-12 w-full max-w-[370px] rounded-[20px] bg-white/[0.08] px-5 py-6">
-                <Text as="h2" className="mb-5 text-2xl font-semibold text-white">
-                  Order Summary
-                </Text>
-
-                <div className="mb-10 h-[250px] w-full overflow-hidden rounded-[4px] bg-[#111827]">
-                  <img
-                    src={summaryImg}
-                    alt="Order summary preview"
-                    className="h-full w-full object-cover opacity-80"
-                  />
+                  <div className="border-t-2 border-black pt-4">
+                    <div className="flex items-center justify-between">
+                      <Text as="span" className="text-2xl font-bold text-black">
+                        Total
+                      </Text>
+                      <Text as="span" className="text-2xl font-bold text-black">
+                        ${totalPrice}
+                      </Text>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between px-2">
-                  <Text as="p" className="text-xl font-medium text-white">
-                    Total
+                <button
+                  type="button"
+                  onClick={handlePlaceOrder}
+                  disabled={isSubmitting}
+                  className="mt-6 flex h-14 w-full items-center justify-center border-2 border-black bg-[#c9a7ff] text-lg font-semibold text-black shadow-[3px_3px_0_0_#000] transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmitting ? "Creating order..." : "Continue to Payment"}
+                </button>
+
+                {submitError && (
+                  <Text as="p" className="mt-3 text-sm text-red-600">
+                    {submitError}
                   </Text>
-                  <Text as="p" className="text-xl font-medium text-white">
-                    ${totalPrice} USD
-                  </Text>
-                </div>
+                )}
               </div>
-            </aside>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

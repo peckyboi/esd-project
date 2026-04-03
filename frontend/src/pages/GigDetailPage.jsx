@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import GigImage from "@/components/GigImage";
 import FreelancerCard from "@/components/FreelancerCard";
 import ReviewList from "@/components/ReviewList";
@@ -10,13 +10,14 @@ import { Loader2 } from "lucide-react";
 import { fetchGigById } from "@/api/browseGigApi";
 
 function GigDetailPage() {
+    const navigate = useNavigate();
     const { gigId } = useParams();
     
     const [gig, setGig] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const orderStatus = null; // can be null, in_progress or delivered
+  const orderStatus = null; // can be null, in_progress or delivered
 
     useEffect(() => {
         async function load() {
@@ -34,6 +35,7 @@ function GigDetailPage() {
         }
         load();
     }, [gigId]);
+
 
     if (loading) {
         return (
@@ -56,16 +58,16 @@ function GigDetailPage() {
         );
     }
 
+  return (
+    <main className="min-h-screen bg-background p-6">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Link to="/home">
+          <Button variant="outline">← Back to Homepage</Button>
+        </Link>
 
-    return (
-        <main className="min-h-screen bg-background p-6">
-            <div className="mx-auto max-w-6xl space-y-6">
-
-                <Link to={`/`}>
-                    <Button variant="outline">← Back to Homepage</Button>
-                </Link>
-
-                <Text as="h1" className="mt-6">{gig.title}</Text>
+        <Text as="h1" className="mt-6">
+          {gig.title}
+        </Text>
 
                 <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
                     <GigImage image={gig.image_url} />
@@ -80,22 +82,24 @@ function GigDetailPage() {
                     />
                 </div>
 
-                <GigDescription description={gig.description} />
+        <GigDescription description={gig.description} />
 
-                {orderStatus === null && (
-                    <Button>Order Now</Button>
-                )}
+        {orderStatus === null && (
+          <Button onClick={() => navigate(`/place-order/${gig.gig_id}`, { state: { gig } })}>
+            Order Now
+          </Button>
+        )}
 
-                {orderStatus === "in_progress" && (
-                    <Button>Mark as Delivered</Button>
-                )}
+        {orderStatus === "in_progress" && (
+          <Button>Mark as Delivered</Button>
+        )}
 
-                {orderStatus === "delivered" && (
-                    <div className="flex gap-3">
-                        <Button variant="outline">Dispute Order</Button>
-                        <Button>Confirm Order</Button>
-                    </div>
-                )}
+        {orderStatus === "delivered" && (
+          <div className="flex gap-3">
+            <Button variant="outline">Dispute Order</Button>
+            <Button>Confirm Order</Button>
+          </div>
+        )}
 
                 <ReviewList reviews={gig.review_list} />
 

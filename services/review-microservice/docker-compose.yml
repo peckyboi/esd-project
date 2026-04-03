@@ -1,0 +1,54 @@
+services:
+  review-db:
+    image: mysql:8.4
+    container_name: review-db
+    environment:
+      MYSQL_DATABASE: review_db
+      MYSQL_USER: review_user
+      MYSQL_PASSWORD: review_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - review_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot_pass || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  review-db-seeder:
+    image: mysql:8.4
+    container_name: review-db-seeder
+    depends_on:
+      review-db:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/seed:ro
+    command: >
+      sh -c "mysql -h review-db -ureview_user -preview_pass review_db < /seed/schema.sql && mysql -h review-db -ureview_user -preview_pass review_db < /seed/seed.sql"
+    restart: "no"
+
+  review-microservice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: review-microservice
+    depends_on:
+      review-db-seeder:
+        condition: service_completed_successfully
+    environment:
+      SERVER_PORT: 8085
+      SPRING_DATASOURCE_URL: jdbc:mysql://review-db:3306/review_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: review_user
+      SPRING_DATASOURCE_PASSWORD: review_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    ports:
+      - "8085:8085"
+
+volumes:
+  review_db_data:
