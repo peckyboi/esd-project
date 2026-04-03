@@ -10,6 +10,7 @@ def test_create_order_success(client, canonical_order_payload, publisher_mocks, 
     assert data["freelancer_id"] == canonical_order_payload["freelancer_id"]
     assert data["gig_id"] == canonical_order_payload["gig_id"]
     assert data["price"] == canonical_order_payload["price"]
+    assert data["order_description"] == canonical_order_payload["order_description"]
     assert data["status"] == models.OrderStatus.PENDING_PAYMENT.value
 
     order = db_session.query(models.Order).filter(models.Order.id == data["id"]).first()

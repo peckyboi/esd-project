@@ -8,7 +8,7 @@ from app.schemas import (
     RefundPaymentRequest,
     PaymentResponse
 )
-from app import stripe_client, rabbitmq
+from app import stripe_client
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -18,7 +18,7 @@ def hold_payment(request: HoldPaymentRequest, db: Session = Depends(get_db)):
     """
     Hold payment in escrow via Stripe PaymentIntent.
     Called by composite service when client places an order.
-    Publishes PaymentSuccess or PaymentFailed event to RabbitMQ.
+    Returns payment hold result to caller (UI/composite orchestrates next step).
     """
     # Create payment record with pending status first
     payment = Payment(
@@ -41,19 +41,7 @@ def hold_payment(request: HoldPaymentRequest, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(payment)
 
-        # Publish PaymentSuccess event
-        rabbitmq.publish_payment_success(
-            order_id=payment.order_id,
-            payment_id=payment.payment_id,
-            amount=float(payment.amount)
-        )
     else:
-        # Publish PaymentFailed event
-        rabbitmq.publish_payment_failed(
-            order_id=payment.order_id,
-            payment_id=payment.payment_id,
-            reason=result.get("error", "Unknown error")
-        )
         raise HTTPException(
             status_code=400,
             detail=f"Stripe payment failed: {result.get('error')}"
@@ -67,7 +55,7 @@ def release_payment(request: ReleasePaymentRequest, db: Session = Depends(get_db
     """
     Release held payment to freelancer via Stripe capture.
     Called after order is completed and approved.
-    Publishes payment.completed event to RabbitMQ.
+    Returns released status to caller.
     """
     payment = db.query(Payment).filter(Payment.payment_id == request.payment_id).first()
 
@@ -88,12 +76,6 @@ def release_payment(request: ReleasePaymentRequest, db: Session = Depends(get_db
         db.commit()
         db.refresh(payment)
 
-        # Publish payment.completed event
-        rabbitmq.publish_payment_completed(
-            order_id=payment.order_id,
-            payment_id=payment.payment_id,
-            status="released"
-        )
     else:
         raise HTTPException(
             status_code=400,
@@ -108,7 +90,7 @@ def refund_payment(request: RefundPaymentRequest, db: Session = Depends(get_db))
     """
     Refund held payment back to client via Stripe refund.
     Called when dispute is resolved in client's favour.
-    Publishes payment.completed event to RabbitMQ.
+    Returns refunded status to caller.
     """
     payment = db.query(Payment).filter(Payment.payment_id == request.payment_id).first()
 
@@ -129,12 +111,6 @@ def refund_payment(request: RefundPaymentRequest, db: Session = Depends(get_db))
         db.commit()
         db.refresh(payment)
 
-        # Publish payment.completed event
-        rabbitmq.publish_payment_completed(
-            order_id=payment.order_id,
-            payment_id=payment.payment_id,
-            status="refunded"
-        )
     else:
         raise HTTPException(
             status_code=400,
@@ -142,6 +118,14 @@ def refund_payment(request: RefundPaymentRequest, db: Session = Depends(get_db))
         )
 
     return payment
+
+
+@router.get("/", response_model=list[PaymentResponse])
+def list_payments(db: Session = Depends(get_db)):
+    """
+    List all payment records, newest first.
+    """
+    return db.query(Payment).order_by(Payment.payment_id.desc()).all()
 
 
 @router.get("/{payment_id}", response_model=PaymentResponse)

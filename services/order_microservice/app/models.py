@@ -31,18 +31,10 @@ class Order(Base):
     
     # order details
     price = Column(Float, nullable=False)
+    order_description = Column(String(1000), nullable=True)
     status = Column(String(50), default=OrderStatus.PENDING_PAYMENT.value, nullable=False)
     payment_transaction_id = Column(String(100), nullable=True) 
 
     # timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-
-class ProcessedEvent(Base):
-    __tablename__ = "processed_events"
-
-    id = Column(Integer, primary_key=True, index=True)
-    event_id = Column(String(100), unique=True, index=True, nullable=False)
-    event_type = Column(String(100), nullable=False)
-    processed_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

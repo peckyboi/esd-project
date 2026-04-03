@@ -13,6 +13,7 @@ def _base_order_data(order):
         "freelancer_id": order.freelancer_id,
         "gig_id": order.gig_id,
         "amount": order.price,
+        "order_description": order.order_description,
         "status": order.status,
         "payment_transaction_id": order.payment_transaction_id,
         "dispute_reason": order.dispute_reason,
@@ -86,3 +87,8 @@ def publish_order_cancelled_event(order):
 def publish_order_status_updated_event(order):
     event_id = _publish_event("OrderStatusUpdated", _base_order_data(order))
     print(f"Sent 'OrderStatusUpdated' event for Order ID: {order.id}, event_id: {event_id}")
+
+
+def publish_order_confirmed_event(order):
+    event_id = _publish_event("OrderConfirmed", _base_order_data(order))
+    print(f"Sent 'OrderConfirmed' event for Order ID: {order.id}, event_id: {event_id}")

@@ -18,7 +18,7 @@ def get_gig_by_id(db: Session, gig_id: int) -> Optional[Gig]:
     """Fetch a single gig by its ID (only active/paused, not deleted)."""
     return (
         db.query(Gig)
-        .filter(Gig.gig_id == gig_id, Gig.status != GigStatus.deleted)
+        .filter(Gig.gig_id == gig_id, Gig.status != GigStatus.deleted.value)
         .first()
     )
 
@@ -37,7 +37,7 @@ def get_gigs(
     Retrieve gigs with optional filtering.
     Used by Gig Catalog Composite Service for browsing.
     """
-    query = db.query(Gig).filter(Gig.status == GigStatus.active)
+    query = db.query(Gig).filter(Gig.status == GigStatus.active.value)
 
     if category:
         query = query.filter(Gig.category.ilike(f"%{category}%"))
