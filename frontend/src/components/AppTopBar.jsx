@@ -66,7 +66,7 @@ function AppTopBar() {
             </a>
             <a
               className="text-foreground no-underline"
-              href="#"
+              href="chat#"
               title="Messages"
               aria-label="Messages"
             >
