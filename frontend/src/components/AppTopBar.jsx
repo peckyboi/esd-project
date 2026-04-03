@@ -5,6 +5,7 @@ import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
 import { User, MessageSquare } from "lucide-react";
 import { useActor } from "@/context/actorContext";
+import { Link } from "react-router-dom";
 
 function AppTopBar() {
   const location = useLocation();
@@ -54,7 +55,7 @@ function AppTopBar() {
           <nav className="flex items-center gap-4 text-lg">
             <a
               className="text-foreground no-underline"
-              href="#"
+              href="profile#"
               title="Profile"
               aria-label="Profile"
             >
