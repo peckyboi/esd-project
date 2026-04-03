@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import OrdersPage from "./pages/OrdersPage";
 import HomePage from "./pages/HomePage";
 import GigDetailPage from "./pages/GigDetailPage";
 import PlaceOrderPage from "./pages/PlaceOrderPage";
@@ -11,6 +12,7 @@ function App() {
       <AppTopBar />
 
       <Routes>
+        <Route path="/orders" element={<OrdersPage />} />    
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/gig/:gigId" element={<GigDetailPage />} />
