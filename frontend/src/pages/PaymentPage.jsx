@@ -1,43 +1,58 @@
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Text } from "@/components/retroui/Text";
 import { Check } from "lucide-react";
 import { holdPayment } from "@/api/paymentApi";
 import { updateOrderPaymentResult } from "@/api/orderApi";
 
+function getDeliveryText(gig) {
+  if (gig && gig.delivery) return gig.delivery;
+  if (gig && typeof gig.delivery_days === "number") {
+    return gig.delivery_days === 1 ? "1 day delivery" : `${gig.delivery_days} days delivery`;
+  }
+  return "N/A";
+}
+
 function PaymentPage() {
+  const navigate = useNavigate();
   const location = useLocation();
+  const state = location.state || {};
 
-  const gig = location.state?.gig || {
-    title: "SaaS Web App Development",
-    freelancer: "Alice W",
-    delivery: "2 days delivery",
-    price: 495
-  };
-
-  const quantity = location.state?.quantity || 1;
-  const totalPrice = location.state?.totalPrice || gig.price * quantity;
-  const orderId = location.state?.orderId || null;
+  const gig = state.gig || null;
+  const totalPrice = typeof state.totalPrice === "number" ? state.totalPrice : (gig && gig.price) || 0;
+  const orderId = state.orderId || null;
+  const previewImage = gig ? (gig.image_url || gig.image || null) : null;
+  const deliveryText = getDeliveryText(gig);
+  const basePrice = gig && typeof gig.price === "number" ? gig.price : totalPrice;
 
   const [saveCard, setSaveCard] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paymentResult, setPaymentResult] = useState(null);
   const [flowError, setFlowError] = useState("");
 
   const handlePay = async () => {
     setIsSubmitting(true);
     setFlowError("");
-    setPaymentResult(null);
 
     try {
+      if (!gig) {
+        throw new Error("Missing gig data. Please create the order again.");
+      }
       if (!orderId) {
         throw new Error("Missing order id. Create the order first.");
+      }
+      const clientId = gig.client_id;
+      const freelancerId = gig.freelancer_id || gig.user_id;
+      if (!clientId) {
+        throw new Error("Missing client id.");
+      }
+      if (!freelancerId) {
+        throw new Error("Missing freelancer id.");
       }
 
       const payment = await holdPayment({
         orderId,
-        clientId: gig.client_id || 1,
-        freelancerId: gig.freelancer_id || gig.user_id || 1,
+        clientId,
+        freelancerId,
         amount: totalPrice,
       });
 
@@ -46,14 +61,37 @@ function PaymentPage() {
         paymentId: payment.payment_id,
         paymentStatus: payment.status,
       });
-
-      setPaymentResult({ payment, updatedOrder });
+      if (updatedOrder && updatedOrder.id) {
+        navigate("/home");
+      }
     } catch (err) {
       setFlowError(err.message || "Payment flow failed");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (!gig || !orderId) {
+    return (
+      <main className="min-h-screen bg-background p-6">
+        <div className="mx-auto max-w-3xl border-2 border-black bg-[#f7f7f7] p-6 shadow-[6px_6px_0_0_#000]">
+          <Text as="h1" className="text-3xl font-bold text-black">
+            Payment
+          </Text>
+          <Text as="p" className="mt-3 text-lg text-red-600">
+            Missing order/payment context. Please place the order again.
+          </Text>
+          <button
+            type="button"
+            onClick={() => navigate("/home")}
+            className="mt-6 flex h-12 items-center justify-center border-2 border-black bg-[#c9a7ff] px-6 font-semibold text-black shadow-[3px_3px_0_0_#000]"
+          >
+            Back to Home
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background p-6">
@@ -179,10 +217,20 @@ function PaymentPage() {
                   <div className="h-3 w-[30%] bg-[#cfd8ee]" />
                 </div>
 
-                <div className="flex h-[180px] items-center justify-center bg-[#6679a7]">
-                  <Text className="text-3xl font-bold text-white">
-                    GIG PREVIEW
-                  </Text>
+                <div className="h-[180px] overflow-hidden bg-[#6679a7]">
+                  {previewImage ? (
+                    <img
+                      src={previewImage}
+                      alt={gig.title || "Gig preview"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <Text className="text-3xl font-bold text-white">
+                        GIG PREVIEW
+                      </Text>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-3 flex gap-3">
@@ -197,21 +245,14 @@ function PaymentPage() {
                 <div className="flex justify-between text-lg">
                   <Text className="text-[#5f43b2]">Base Price</Text>
                   <Text className="font-semibold text-black">
-                    ${gig.price}
-                  </Text>
-                </div>
-
-                <div className="flex justify-between text-lg">
-                  <Text className="text-[#5f43b2]">Quantity</Text>
-                  <Text className="font-semibold text-black">
-                    {quantity}
+                    ${basePrice}
                   </Text>
                 </div>
 
                 <div className="flex justify-between text-lg">
                   <Text className="text-[#5f43b2]">Delivery</Text>
                   <Text className="font-semibold text-black">
-                    {gig.delivery}
+                    {deliveryText}
                   </Text>
                 </div>
 
@@ -238,20 +279,6 @@ function PaymentPage() {
                 <Text as="p" className="mt-4 text-sm text-red-600">
                   {flowError}
                 </Text>
-              )}
-
-              {paymentResult && (
-                <div className="mt-4 rounded border-2 border-black bg-white p-3 text-sm">
-                  <Text as="p">
-                    Order ID: {paymentResult.updatedOrder?.id || orderId}
-                  </Text>
-                  <Text as="p">
-                    Payment ID: {paymentResult.payment?.payment_id}
-                  </Text>
-                  <Text as="p">
-                    Order Status: {paymentResult.updatedOrder?.status}
-                  </Text>
-                </div>
               )}
             </div>
           </aside>

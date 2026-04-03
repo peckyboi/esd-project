@@ -85,7 +85,9 @@ function GigDetailPage() {
         <GigDescription description={gig.description} />
 
         {orderStatus === null && (
-          <Button onClick={() => navigate(`/place-order/${gig.gig_id}`)}>Order Now</Button>
+          <Button onClick={() => navigate(`/place-order/${gig.gig_id}`, { state: { gig } })}>
+            Order Now
+          </Button>
         )}
 
         {orderStatus === "in_progress" && (
