@@ -8,9 +8,6 @@ import AppTopBar from "@/components/AppTopBar";
 
 function App() {
   return (
-    <Routes>
-      
-    </Routes>
     <div className="min-h-screen w-full overflow-hidden bg-background">
       <AppTopBar />
 
