@@ -5,6 +5,7 @@ import { Select } from "@/components/retroui/Select";
 import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
 import GigCard from "@/components/GigCard";
+import NotificationBell from "@/components/NotificationBell";
 import { User, MessageSquare, Loader2 } from "lucide-react";
 import { fetchGigs, fetchCategories } from "@/api/browseGigApi";
 
@@ -157,6 +158,8 @@ function HomePage() {
                 </Avatar.Fallback>
               </Avatar>
             </a>
+
+            <NotificationBell notifications={[]} />
           </nav>
         </header>
 
