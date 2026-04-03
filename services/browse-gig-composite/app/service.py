@@ -52,6 +52,7 @@ async def enrich_gig_dict(gig: dict, user_cache: dict[int, dict]) -> GigListing:
 
     return GigListing(
         gig_id=gig_id,
+        freelancer_id=f_id,
         title=gig["title"],
         description=gig["description"],
         price=gig["price"],
@@ -113,6 +114,7 @@ async def get_aggregated_gig_by_id(gig_id: int) -> Optional[GigListing]:
     
     return GigListing(
         gig_id=gig["gig_id"],
+        freelancer_id=gig["freelancer_id"],
         title=gig["title"],
         description=gig["description"],
         price=gig["price"],

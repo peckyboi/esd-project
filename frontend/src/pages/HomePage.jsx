@@ -3,10 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/retroui/Input";
 import { Select } from "@/components/retroui/Select";
 import { Text } from "@/components/retroui/Text";
-import { Avatar } from "@/components/retroui/Avatar";
-import { Link } from "react-router-dom";
 import GigCard from "@/components/GigCard";
-import { User, MessageSquare, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { fetchGigs, fetchCategories } from "@/api/browseGigApi";
 
 // Filter config drives the dropdowns so we don't hardcode repeated JSX blocks.
@@ -126,41 +124,6 @@ function HomePage() {
   return (
     <main className="min-h-screen w-full">
       <section className="min-h-screen w-full overflow-hidden bg-background">
-        {/* Top nav row */}
-        <header className="flex items-center justify-between border-b border-border/60 bg-black/20 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Text as="p" className="text-2xl font-semibold">
-              Freelance Gig Service
-            </Text>
-          </div>
-          <nav className="flex items-center gap-4 text-lg">
-            <a
-              className="text-foreground no-underline"
-              href="#"
-              title="Profile"
-              aria-label="Profile"
-            >
-              <Avatar className="h-10 w-10 border-2 border-border bg-card transition-colors hover:bg-muted">
-                <Avatar.Fallback className="bg-transparent">
-                  <User size={22} />
-                </Avatar.Fallback>
-              </Avatar>
-            </a>
-            <Link
-              className="text-foreground no-underline"
-              to="/chat"
-              title="Messages"
-              aria-label="Messages"
-            >
-              <Avatar className="h-10 w-10 border-2 border-border bg-card transition-colors hover:bg-muted">
-                <Avatar.Fallback className="bg-transparent">
-                  <MessageSquare size={22} />
-                </Avatar.Fallback>
-              </Avatar>
-            </Link>
-          </nav>
-        </header>
-
         <section className="p-5">
           <section className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-[1.6fr_repeat(3,minmax(0,1fr))]">
             <label className="flex flex-col gap-1">
