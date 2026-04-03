@@ -23,7 +23,7 @@ app.include_router(gig_router)
 
 @app.on_event("startup")
 def startup():
-    retries = 10
+    retries = 20
     for i in range(retries):
         try:
             with engine.connect() as conn:
@@ -32,8 +32,8 @@ def startup():
             print("Database connected and tables created!")
             break
         except Exception as e:
-            print(f"Database not ready yet, retrying in 3 seconds... ({i+1}/{retries})")
-            time.sleep(3)
+            print(f"Database not ready yet, retrying in 5 seconds... ({i+1}/{retries})")
+            time.sleep(5)
     else:
         raise Exception("Database connection failed")
 

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS orders (
   freelancer_id INT NOT NULL,
   gig_id INT NOT NULL,
   price FLOAT NOT NULL,
+  order_description VARCHAR(1000) NULL,
   status VARCHAR(50) NOT NULL DEFAULT 'pending_payment',
   payment_transaction_id  VARCHAR(100)  NULL,
   dispute_reason VARCHAR(500)  NULL,
@@ -16,13 +17,4 @@ CREATE TABLE IF NOT EXISTS orders (
   INDEX idx_order_client_id (client_id),
   INDEX idx_order_freelancer_id (freelancer_id),
   INDEX idx_order_gig_id (gig_id)
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS processed_events (
-  id INT NOT NULL AUTO_INCREMENT,
-  event_id VARCHAR(100) NOT NULL,
-  event_type VARCHAR(100) NOT NULL,
-  processed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE INDEX idx_processed_event_id (event_id)
 ) ENGINE=InnoDB;
