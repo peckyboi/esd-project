@@ -3,11 +3,23 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app import database, models, rabbitmq_pub, schemas
 
 app = FastAPI(title="Order Microservice")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 #allowed status changes so each bracket dictates what is allowed
 ALLOWED_TRANSITIONS = {
