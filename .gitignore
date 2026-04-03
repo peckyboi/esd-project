@@ -208,7 +208,6 @@ __marimo__/
 
 #freelance-job-service
 freelance_job_dev.db
-docker-compose.yml
 test.db
 
 #others

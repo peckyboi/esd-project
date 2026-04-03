@@ -53,11 +53,6 @@ function FreelancerCard({ name, avatar, rating, price, delivery_days, category, 
                     </div>
                 )}
                 
-            <div className="rounded-md border border-border bg-muted p-3 text-xs text-muted-foreground">
-                <Text className="text-xs">
-                Secure checkout • 24/7 support • Money-back guarantee
-                </Text>
-            </div>
             </Card.Content>
         </Card>
     );

@@ -1,0 +1,223 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - ms-net
+
+  # 1. Order Service
+  order-db:
+    image: mysql:8.4
+    container_name: order-db
+    environment:
+      MYSQL_DATABASE: order_db
+      MYSQL_USER: order_user
+      MYSQL_PASSWORD: order_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3308:3306"
+    volumes:
+      - order_db_data:/var/lib/mysql
+      - ../services/order_microservice/scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -proot_pass || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ms-net
+
+  order-microservice:
+    build:
+      context: ../services/order_microservice
+      dockerfile: Dockerfile
+    container_name: order-microservice
+    depends_on:
+      order-db:
+        condition: service_healthy
+    environment:
+      PORT: 8000
+      DATABASE_URL: mysql+pymysql://order_user:order_pass@order-db:3306/order_db
+      RABBITMQ_PORT: 5672
+      RABBITMQ_HOST: rabbitmq
+    ports:
+      - "8000:8000"
+    networks:
+      - ms-net
+
+  #2. Review Service
+  review-db:
+    image: mysql:8.4
+    container_name: review-db
+    environment:
+      MYSQL_DATABASE: review_db
+      MYSQL_USER: review_user
+      MYSQL_PASSWORD: review_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - review_db_data:/var/lib/mysql
+      - ../services/review-microservice/scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -proot_pass || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ms-net
+
+  review-microservice:
+    build:
+      context: ../services/review-microservice
+      dockerfile: Dockerfile
+    container_name: review-microservice
+    depends_on:
+      review-db:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8085
+      SPRING_DATASOURCE_URL: jdbc:mysql://review-db:3306/review_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: review_user
+      SPRING_DATASOURCE_PASSWORD: review_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    ports:
+      - "8085:8085"
+    networks:
+      - ms-net
+
+  # 3. Payment Service
+  payment-db:
+    image: mysql:8.4
+    container_name: payment-db
+    environment:
+      MYSQL_DATABASE: payment_db
+      MYSQL_USER: payment_user
+      MYSQL_PASSWORD: payment_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3309:3306"
+    volumes:
+      - payment_db_data:/var/lib/mysql
+      - ../services/payment-microservice/scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -proot_pass || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ms-net
+
+  payment-microservice:
+    build:
+      context: ../services/payment-microservice
+      dockerfile: Dockerfile
+    container_name: payment-microservice
+    depends_on:
+      payment-db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: mysql+pymysql://payment_user:payment_pass@payment-db:3306/payment_db
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    ports:
+      - "8002:8002"
+    networks:
+      - ms-net
+
+  # 4. Freelance Job Service
+  freelance-job-db:
+    image: mysql:8.4
+    container_name: freelance-job-db
+    environment:
+      MYSQL_DATABASE: freelance_job_db
+      MYSQL_USER: freelance_job_user
+      MYSQL_PASSWORD: freelance_job_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3310:3306"
+    volumes:
+      - freelance_job_db_data:/var/lib/mysql
+      - ../services/freelance-job-service/scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -proot_pass || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - ms-net
+
+  freelance-job-service:
+    build:
+      context: ../services/freelance-job-service
+      dockerfile: Dockerfile
+    container_name: freelance-job-service
+    depends_on:
+      freelance-job-db:
+        condition: service_healthy
+    environment:
+      PORT: 8084
+      ENVIRONMENT: production
+      DB_HOST: freelance-job-db
+      DB_PORT: 3306
+      DB_USER: freelance_job_user
+      DB_PASSWORD: freelance_job_pass
+      DB_NAME: freelance_job_db
+    ports:
+      - "8084:8084"
+    networks:
+      - ms-net
+
+  # 5. Browse Gig Composite Service
+  browse-gig-composite:
+    build:
+      context: ../services/browse-gig-composite
+      dockerfile: Dockerfile
+    container_name: browse-gig-composite
+    depends_on:
+      - freelance-job-service
+      - review-microservice
+    environment:
+      PORT: 8087
+      FREELANCE_JOB_SERVICE_URL: http://freelance-job-service:8084
+      REVIEW_SERVICE_URL: http://review-microservice:8085
+      USER_SERVICE_URL: https://personal-43hivjqa.outsystemscloud.com/User/rest/User/
+    ports:
+      - "8087:8087"
+    networks:
+      - ms-net
+
+volumes:
+  review_db_data:
+  order_db_data:
+  payment_db_data:
+  freelance_job_db_data:
+
+
+networks:
+  ms-net:
+    driver: bridge
