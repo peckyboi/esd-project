@@ -4,6 +4,7 @@ import { Text } from "@/components/retroui/Text";
 import { Check } from "lucide-react";
 import { holdPayment } from "@/api/paymentApi";
 import { updateOrderPaymentResult } from "@/api/orderApi";
+import { useActor } from "@/context/actorContext";
 
 function getDeliveryText(gig) {
   if (gig && gig.delivery) return gig.delivery;
@@ -15,6 +16,7 @@ function getDeliveryText(gig) {
 
 function PaymentPage() {
   const navigate = useNavigate();
+  const { role, resolvedUserId } = useActor();
   const location = useLocation();
   const state = location.state || {};
 
@@ -37,10 +39,16 @@ function PaymentPage() {
       if (!gig) {
         throw new Error("Missing gig data. Please create the order again.");
       }
+      if (role !== "client") {
+        throw new Error("Switch role to client on Home before making payment.");
+      }
+      if (!resolvedUserId) {
+        throw new Error("Set a valid user id on Home before making payment.");
+      }
       if (!orderId) {
         throw new Error("Missing order id. Create the order first.");
       }
-      const clientId = gig.client_id;
+      const clientId = resolvedUserId;
       const freelancerId = gig.freelancer_id || gig.user_id;
       if (!clientId) {
         throw new Error("Missing client id.");

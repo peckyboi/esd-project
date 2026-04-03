@@ -5,6 +5,7 @@ import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
 import { Star, Clock3 } from "lucide-react";
 import { createOrder } from "@/api/orderApi";
+import { useActor } from "@/context/actorContext";
 
 function getDeliveryText(gig) {
   if (gig && gig.delivery) return gig.delivery;
@@ -17,6 +18,7 @@ function getDeliveryText(gig) {
 function PlaceOrderPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { role, resolvedUserId } = useActor();
   const state = location.state || {};
   const gig = state.gig || null;
 
@@ -42,9 +44,15 @@ function PlaceOrderPage() {
       if (!gig) {
         throw new Error("Missing gig data. Please start from the gig details page.");
       }
+      if (role !== "client") {
+        throw new Error("Switch role to client on Home before placing an order.");
+      }
+      if (!resolvedUserId) {
+        throw new Error("Set a valid user id on Home before placing an order.");
+      }
 
       const gigId = gig.gig_id || gig.id;
-      const clientId = gig.client_id;
+      const clientId = resolvedUserId;
       const freelancerId = gig.freelancer_id || gig.user_id;
       if (!gigId) {
         throw new Error("Missing gig id. Please start from a gig details page.");
