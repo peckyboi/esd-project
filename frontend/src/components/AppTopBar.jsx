@@ -4,6 +4,7 @@ import { Select } from "@/components/retroui/Select";
 import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
 import { User, MessageSquare } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 import { useActor } from "@/context/actorContext";
 
 function AppTopBar() {
@@ -76,6 +77,7 @@ function AppTopBar() {
                 </Avatar.Fallback>
               </Avatar>
             </a>
+            <NotificationBell notifications={[]} />
           </nav>
         </div>
       </header>
