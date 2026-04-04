@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useState } from "react";
 import { Input } from "@/components/retroui/Input";
 import { Select } from "@/components/retroui/Select";
@@ -89,18 +89,18 @@ function AppTopBar() {
                 </Avatar.Fallback>
               </Avatar>
             </a>
-            <a
-              className="text-foreground no-underline"
-              href="#"
+            <Link
+              to="/chat"
               title="Messages"
               aria-label="Messages"
+              className="text-foreground no-underline"
             >
               <Avatar className="h-10 w-10 border-2 border-border bg-card transition-colors hover:bg-muted">
                 <Avatar.Fallback className="bg-transparent">
                   <MessageSquare size={22} />
                 </Avatar.Fallback>
               </Avatar>
-            </a>
+            </Link>
             <NotificationBell
               notifications={notifications}
               loading={isNotifLoading}
