@@ -1,4 +1,5 @@
 import { useLocation } from "react-router-dom";
+import { useState } from "react";
 import { Input } from "@/components/retroui/Input";
 import { Select } from "@/components/retroui/Select";
 import { Text } from "@/components/retroui/Text";
@@ -6,11 +7,34 @@ import { Avatar } from "@/components/retroui/Avatar";
 import { User, MessageSquare } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { useActor } from "@/context/actorContext";
+import { getNotificationsByUser } from "@/api/notificationApi";
 
 function AppTopBar() {
   const location = useLocation();
-  const { userId, role, setUserId, setRole } = useActor();
+  const { userId, role, resolvedUserId, setUserId, setRole } = useActor();
   const canEditIdentity = location.pathname === "/home";
+  const [notifications, setNotifications] = useState([]);
+  const [isNotifLoading, setIsNotifLoading] = useState(false);
+  const [notifError, setNotifError] = useState("");
+
+  const loadNotifications = async () => {
+    if (!resolvedUserId) {
+      setNotifications([]);
+      setNotifError("Set a valid user id to view notifications.");
+      return;
+    }
+
+    setIsNotifLoading(true);
+    setNotifError("");
+    try {
+      const data = await getNotificationsByUser(resolvedUserId);
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setNotifError(err.message || "Failed to load notifications.");
+    } finally {
+      setIsNotifLoading(false);
+    }
+  };
 
   return (
     <>
@@ -77,7 +101,12 @@ function AppTopBar() {
                 </Avatar.Fallback>
               </Avatar>
             </a>
-            <NotificationBell notifications={[]} />
+            <NotificationBell
+              notifications={notifications}
+              loading={isNotifLoading}
+              error={notifError}
+              onOpen={loadNotifications}
+            />
           </nav>
         </div>
       </header>
