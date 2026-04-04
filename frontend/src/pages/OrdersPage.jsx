@@ -9,11 +9,12 @@ import OrdersPagination from "@/components/orders/OrdersPagination";
 import { useActor } from "@/context/actorContext";
 import { fetchGigById } from "@/api/browseGigApi";
 import {
-    approveOrder,
     deliverOrder,
     disputeOrder,
     listOrders,
+    updateOrderPaymentReleaseResult,
 } from "@/api/orderApi";
+import { releasePayment } from "@/api/paymentApi";
 
 const ORDERS_PER_PAGE = 4;
 
@@ -67,6 +68,9 @@ export default function OrdersPage() {
 
             const normalized = rawOrders.map((order) => {
                 const gig = gigsById[order.gig_id];
+                const parsedPaymentId = order.payment_transaction_id
+                    ? Number(order.payment_transaction_id)
+                    : null;
                 return {
                     id: order.id,
                     gigId: order.gig_id,
@@ -75,6 +79,7 @@ export default function OrdersPage() {
                     price: order.price,
                     deliveryDays: gig && gig.delivery_days ? gig.delivery_days : 0,
                     status: order.status,
+                    paymentId: Number.isFinite(parsedPaymentId) ? parsedPaymentId : null,
                 };
             });
             setOrders(normalized);
@@ -120,6 +125,19 @@ export default function OrdersPage() {
         } finally {
             setActionLoadingId(null);
         }
+    };
+
+    const runApproveFlow = async (order) => {
+        if (!order.paymentId) {
+            throw new Error("Missing payment id on this order. Cannot release payment.");
+        }
+
+        const releasedPayment = await releasePayment({ paymentId: order.paymentId });
+        await updateOrderPaymentReleaseResult({
+            orderId: order.id,
+            paymentId: releasedPayment.payment_id,
+            paymentStatus: releasedPayment.status,
+        });
     };
 
     return (
@@ -174,7 +192,7 @@ export default function OrdersPage() {
                             actionLoading={actionLoadingId}
                             onViewGig={(selectedOrder) => navigate(`/gig/${selectedOrder.gigId}`)}
                             onDeliver={(selectedOrder) => runAction(selectedOrder.id, () => deliverOrder(selectedOrder.id))}
-                            onApprove={(selectedOrder) => runAction(selectedOrder.id, () => approveOrder(selectedOrder.id))}
+                            onApprove={(selectedOrder) => runAction(selectedOrder.id, () => runApproveFlow(selectedOrder))}
                             onDispute={(selectedOrder) =>
                                 runAction(selectedOrder.id, () => disputeOrder(selectedOrder.id, "Disputed by client from UI"))
                             }
