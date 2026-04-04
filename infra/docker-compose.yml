@@ -211,6 +211,26 @@ services:
     networks:
       - ms-net
 
+  # 6. Chat Service
+  chat_microservice:
+    build: 
+      context: ../services/chat_microservice
+      dockerfile: Dockerfile
+    container_name: chat_microservice
+    restart: always
+    environment:
+      - DB_HOST=chat-db
+      - DB_USER=root
+      - DB_PORT=3307
+      - DB_PASSWORD=root
+      - DB_NAME=chat_db
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    ports:
+      - "8090:8090"
+    depends_on:
+      - mysql_db
+      - rabbitmq
+
 volumes:
   review_db_data:
   order_db_data:
