@@ -211,11 +211,55 @@ services:
     networks:
       - ms-net
 
+  # 6. Notification Service
+  notification-db:
+    image: mysql:8.4
+    container_name: notification-db
+    environment:
+      MYSQL_DATABASE: notification_db
+      MYSQL_USER: notification_user
+      MYSQL_PASSWORD: notification_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3311:3306"
+    volumes:
+      - notification_db_data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -proot_pass || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ms-net
+
+  notification-microservice:
+    build:
+      context: ../services/notification-microservice
+      dockerfile: Dockerfile
+    container_name: notification-microservice
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    environment:
+      DATABASE_URL: mysql+pymysql://notification_user:notification_pass@notification-db:3306/notification_db
+      RABBITMQ_HOST: rabbitmq
+    ports:
+      - "8005:8000"
+    networks:
+      - ms-net
+
 volumes:
   review_db_data:
   order_db_data:
   payment_db_data:
   freelance_job_db_data:
+  notification_db_data:
 
 
 networks:
