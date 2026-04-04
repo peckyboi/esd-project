@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import io from 'socket.io-client';
+import React, { useState, useEffect, useCallback } from 'react';
+import { socket } from "@/lib/socket";
 
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -20,8 +20,7 @@ const fallbackGig = {
   actionMessage: "Disputes are handled through direct communication. If unresolved, refund is processed.",
 };
 
-function ChatPage() {
-  const [currentUserId] = useState("User123");
+function ChatPage({ currentUserId, currentUserRole }) {
   const [chats, setChats] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -42,21 +41,18 @@ function ChatPage() {
         const data = await response.json();
 
         const mappedChats = data.map((room) => {
-          const otherUserId =
-            String(room.userId1) === String(currentUserId)
-              ? room.userId2
-              : room.userId1;
-
-        console.log("Fetched chats:", data)
-
+          const isUser1 = String(room.userId1) === String(currentUserId);
+          const otherUserId = isUser1 ? room.userId2 : room.userId1;
+              
           return {
             id: room.chatId,
-            name: otherUserId,
+            name: otherUserId !== undefined ? String(otherUserId) : "Unknown",
             lastMessage: room.status || "No messages yet",
             raw: room,
           };
         });
-
+        
+        console.log("Mapped chats:", mappedChats);
         setChats(mappedChats);
 
         if (mappedChats.length > 0) {
@@ -91,12 +87,12 @@ function ChatPage() {
 
         const data = await response.json();
 
-        const mappedMessages = data.map((msg, index) => ({
-          id: `${msg.ChatId}-${index}-${msg.Timestamp}`,
-          senderId: msg.SenderId,
-          text: msg.MessageText,
-          timestamp: msg.Timestamp,
-          chatId: msg.ChatId,
+        const mappedMessages = data.map((msg) => ({
+          id: msg.message_id,
+          senderId: msg.sender_id,
+          text: msg.message_text,
+          timestamp: msg.created_at,
+          chatId: msg.chat_id,
         }));
 
         setMessages(mappedMessages);
@@ -112,7 +108,7 @@ function ChatPage() {
   }, [activeChatId]);
 
   useEffect(() => {
-    const activeChat = chats.find((chat) => chat.id === activeChatId);
+    const activeChat = chats.find((chat) => String(chat.id) === String(activeChatId));
 
     if (!activeChat) {
       setGig(fallbackGig);
@@ -132,7 +128,7 @@ function ChatPage() {
     });
   }, [activeChatId, chats]);
 
-  const activeChat = chats.find((chat) => chat.id === activeChatId);
+  const activeChat = chats.find((chat) => String(chat.id) === String(activeChatId));
 
   const activeChatWithMessages = activeChat
     ? {
@@ -140,6 +136,81 @@ function ChatPage() {
         messages,
       }
     : null;
+
+  // 1. Join room when active chat changes
+  useEffect(() => {
+    if (!activeChatId || !currentUserId) return;
+
+    socket.emit("join_conversation", {
+      chatId: activeChatId,
+      userId: currentUserId,
+      role: currentUserRole || "user",
+    });
+
+    console.log("Joining room:", activeChatId);
+  }, [activeChatId, currentUserId, currentUserRole]);
+
+
+  // 2. Listen for incoming messages
+  useEffect(() => {
+    const handleReceiveMessage = (message) => {
+      console.log("Received message:", message);
+      if (String(message.chatId) === String(activeChatId)) {
+        setMessages((prev) => {
+          const exists = prev.some((m) => String(m.id) === String(message.id));
+          if (exists) return prev;
+          return [...prev, {
+            id: message.id,
+            senderId: message.senderId,
+            text: message.content,
+            timestamp: message.createdAt,
+            chatId: message.chatId,
+          }];
+        });
+      }
+    };
+
+    const handleSocketError = (err) => {
+      console.error("Socket error:", err);
+    };
+
+    socket.on("receive_message", handleReceiveMessage);
+    socket.on("socket_error", handleSocketError);
+
+    return () => {
+      socket.off("receive_message", handleReceiveMessage);
+      socket.off("socket_error", handleSocketError);
+    };
+  }, [activeChatId]);
+
+
+  // 3. Send message handler
+  const handleSendMessage = useCallback((content) => {
+    console.log("handleSendMessage called with:", content);
+    console.log("activeChatId:", activeChatId);
+    console.log("currentUserId:", currentUserId);
+    console.log("socket connected:", socket.connected);
+  
+    if (!activeChatId || !currentUserId) {
+      console.error("Cannot send: missing chatId or userId");
+      return;
+    }
+  
+    const trimmed = String(content || "").trim();
+    if (!trimmed) {
+      console.error("Cannot send: empty content");
+      return;
+    }
+  
+    socket.emit("send_message", {
+      chatId: activeChatId,
+      userId: currentUserId,
+      role: currentUserRole || "user",
+      content: trimmed,
+    });
+  
+    console.log("Emitted send_message");
+  }, [activeChatId, currentUserId, currentUserRole]);
 
   return (
     <main className="h-screen flex flex-col bg-background p-4">
@@ -159,6 +230,7 @@ function ChatPage() {
             currentUserId={currentUserId}
             messages={messages}
             loading={loadingMessages}
+            onSendMessage={handleSendMessage}
           />
         </Card>
 

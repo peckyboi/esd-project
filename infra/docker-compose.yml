@@ -254,31 +254,49 @@ services:
     networks:
       - ms-net
 
-    # 7. Chat Service
-    chat_microservice:
-      build:
-        context: ../services/chat_microservice
-        dockerfile: Dockerfile
-      container_name: chat_microservice
-      restart: always
-      ports:
-        - "8090:8090"
-      environment:
-        PORT: 8090
-        ENVIRONMENT: production
-        DB_HOST: chat-db
-        DB_PORT: 3306
-        DB_USER: root
-        DB_PASSWORD: root
-        DB_NAME: chat_db
-        RABBITMQ_URL: amqp://rabbitmq:5672
-      depends_on:
-        chat-db:
-          condition: service_healthy
-        rabbitmq:
-          condition: service_started
-      networks:
-        - ms-net
+  # 7. Chat Service
+  chat_microservice:
+    build:
+      context: ../services/chat-microservice
+      dockerfile: Dockerfile
+    container_name: chat_microservice
+    restart: always
+    ports:
+      - "8090:8090"
+    environment:
+      PORT: 8090
+      ENVIRONMENT: production
+      DB_HOST: chat-db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: chat_db
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      chat-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - ms-net
+
+  chat-db:
+    image: mysql:8.4
+    container_name: chat-db
+    environment:
+      MYSQL_DATABASE: chat_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3312:3306"
+    volumes:
+      - chat_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ms-net
 
 volumes:
   review_db_data:
@@ -286,7 +304,7 @@ volumes:
   payment_db_data:
   freelance_job_db_data:
   notification_db_data:
-
+  chat_db_data:
 
 networks:
   ms-net:

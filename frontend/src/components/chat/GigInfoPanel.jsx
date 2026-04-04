@@ -1,7 +1,6 @@
 import { Card } from "@/components/retroui/Card";
 import { Text } from "@/components/retroui/Text";
 import { Button } from "@/components/retroui/Button";
-import StatusBadge from "@/components/StatusBadge";
 import { Link } from "react-router-dom";
 
 export default function GigInfoPanel({ gig }) {
@@ -23,8 +22,6 @@ export default function GigInfoPanel({ gig }) {
                     <Text>${gig.price}</Text>
                     <Text>{gig.deliveryTime}</Text>
                 </div>
-
-                <StatusBadge status={gig.status} />
 
                 {gig.statusMessage && (
                     <Text as="p" className="text-xs text-muted-foreground mt-1">

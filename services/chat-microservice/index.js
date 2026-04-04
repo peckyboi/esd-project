@@ -1,317 +1,248 @@
-// const express = require('express');
-// const http = require('http');
-// const { Server } = require('socket.io');
-// const mysql = require('mysql2/promise');
-// const cors = require('cors');
-// const amqp = require('amqplib');
-
-
-// // 1. App & Server Initialization
-// const app = express();
-// const server = http.createServer(app);
-
-// app.use(cors());
-// app.use(express.json());
-
-// const io = new Server(server, {
-//   cors: {
-//     origin: "*", // Or "http://localhost:5173"
-//     methods: ["GET", "POST"]
-//   }
-// });
-
-
-// // 2. Database Connection Setup
-// const dbConfig = {
-//   host: process.env.DB_HOST || 'localhost',
-//   user: process.env.DB_USER || 'root',
-//   password: process.env.DB_PASSWORD || 'root',
-//   database: process.env.DB_NAME || 'chat_db',
-//   port: process.env.DB_PORT || 3306
-// };
-
-// let db;
-
-// async function connectDB() {
-//   try {
-//     // 1. Connect WITHOUT the database to create it first
-//     const initDb = await mysql.createConnection({
-//       host: dbConfig.host,
-//       user: dbConfig.user,
-//       password: dbConfig.password
-//     });
-    
-//     await initDb.execute(`CREATE DATABASE IF NOT EXISTS \`${dbConfig.database}\`;`);
-//     await initDb.end(); // Close this temporary connection
-
-//     // 2. Now connect WITH the database selected
-//     db = await mysql.createConnection(dbConfig);
-//     console.log(`✅ Connected to MySQL database: ${dbConfig.database}`);
-
-//     // 3. Create your tables
-//     await db.execute(`
-//       CREATE TABLE IF NOT EXISTS chat_rooms (
-//         chat_id       INT AUTO_INCREMENT PRIMARY KEY,
-//         order_id      INT NOT NULL,
-//         user_id       VARCHAR(255) NOT NULL,
-//         freelancer_id VARCHAR(255) NOT NULL,
-//         status        ENUM('active', 'resolved', 'closed') DEFAULT 'active',
-//         created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
-//         updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-//       )
-//     `);
-
-//     await db.execute(`
-//       CREATE TABLE IF NOT EXISTS chat_messages (
-//         message_id   INT AUTO_INCREMENT PRIMARY KEY,
-//         chat_id      INT NOT NULL,
-//         sender_id    VARCHAR(255) NOT NULL,
-//         message_text TEXT NOT NULL,
-//         created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
-//         FOREIGN KEY (chat_id) REFERENCES chat_rooms(chat_id) ON DELETE CASCADE
-//       )
-//     `);
-
-//   } catch (error) {
-//     console.error('❌ Database connection failed:', error.message);
-//     setTimeout(connectDB, 5000);
-//   }
-// }
-
-
-// connectDB();
-
-
-// // 3. RabbitMQ Setup
-// const rabbitUrl = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
-
-// async function connectRabbitMQ() {
-
-//   try {
-
-//     const connection = await amqp.connect(rabbitUrl);
-//     const channel = await connection.createChannel();
-//     const queue = 'OrderCreated';
-
-//     await channel.assertQueue(queue, { durable: true });
-
-//     console.log('✅ Connected to RabbitMQ, waiting for messages in %s', queue);
-
-//     channel.consume(queue, async (msg) => {
-
-//       if (msg !== null) {
-
-//         const orderData = JSON.parse(msg.content.toString());
-
-//         console.log(`RabbitMQ Event Received: Order ${orderData.orderId} created`);
-
-//         channel.ack(msg);
-
-//       }
-
-//     });
-
-//   } catch (error) {
-
-//     console.error('❌ RabbitMQ connection failed:', error);
-//     setTimeout(connectRabbitMQ, 5000);
-
-//   }
-
-// }
-
-// connectRabbitMQ();
-
-
-// // 4. REST API: Fetch Chat History
-// app.get('/api/chat/:chat_id/history', async (req, res) => {
-//   try {
-//     const { chat_id } = req.params;
-
-//     // Remove the DATE_FORMAT from SQL
-//     const [rows] = await db.execute(
-//       `SELECT 
-//         sender_id AS SenderId,
-//         message_text AS MessageText,
-//         created_at, 
-//         chat_id AS ChatId
-//       FROM chat_messages
-//       WHERE chat_id = ?
-//       ORDER BY created_at ASC`,
-//       [chat_id]
-//     );
-
-//     // Map through the rows and format the Date perfectly for OutSystems
-//     const formattedHistory = rows.map(row => ({
-//       SenderId: row.SenderId,
-//       MessageText: row.MessageText,
-//       ChatId: row.ChatId,
-//       Timestamp: new Date(row.created_at).toISOString() // This guarantees strict formatting!
-//     }));
-
-//     res.status(200).json(formattedHistory);
-
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to fetch history' });
-//   }
-// });
-
-// // app.get('/api/chat/:chat_id/history', async (req, res) => {
-
-// //   try {
-
-// //     const { chat_id } = req.params;
-
-// //     const [rows] = await db.execute(
-// //       `SELECT 
-// //         sender_id AS SenderId,
-// //         message_text AS MessageText,
-// //         DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%sZ') AS Timestamp,
-// //         chat_id AS ChatId
-// //       FROM chat_messages
-// //       WHERE chat_id = ?
-// //       ORDER BY created_at ASC`,
-// //       [chat_id]
-// //     );
-
-// //     res.status(200).json(rows);
-
-// //   } catch (error) {
-
-// //     res.status(500).json({ error: 'Failed to fetch history' });
-
-// //   }
-
-// // });
-
-
-// // 5. REST API: Get All Chat Rooms for a User
-// app.get('/disputes/:user_id', async (req, res) => {
-
-//   const { user_id } = req.params;
-
-//   try {
-
-//     const [rows] = await db.execute(
-//       `SELECT 
-//         chat_id AS chatId,
-//         order_id AS orderId,
-//         user_id AS clientId,
-//         freelancer_id AS freelancerId,
-//         status,
-//         created_at,
-//         updated_at
-//       FROM chat_rooms
-//       WHERE user_id = ? OR freelancer_id = ?
-//       ORDER BY updated_at DESC`,
-//       [user_id, user_id]
-//     );
-
-//     res.status(200).json(rows);
-
-//   } catch (err) {
-
-//     res.status(500).json({ error: err.message });
-
-//   }
-
-// });
-
-
-// // 6. REST API: Create a New Dispute Chat Room
-// app.post('/disputes', async (req, res) => {
-
-//   const { order_id, user_id, freelancer_id } = req.body;
-
-//   try {
-
-//     const [result] = await db.execute(
-//       'INSERT INTO chat_rooms (order_id, user_id, freelancer_id) VALUES (?, ?, ?)',
-//       [order_id, user_id, freelancer_id]
-//     );
-
-//     const chat_id = result.insertId;
-
-//     res.status(201).json({
-//       chat_id: chat_id,
-//       room_url: `/chat/${chat_id}`
-//     });
-
-//   } catch (err) {
-
-//     res.status(500).json({ error: err.message });
-
-//   }
-
-// });
-
-
-// // 7. WebSocket Logic: Handle Live Chat
-// io.on('connection', (socket) => {
-
-//   console.log(`Client connected: ${socket.id}`);
-
-//   socket.on('join_room', (data) => {
-
-//     const chat_id = data.chat_id || data.chatId || data;
-
-//     socket.join(String(chat_id));
-
-//     console.log(`Socket ${socket.id} joined room ${chat_id}`);
-
-//   });
-
-//   socket.on('send_message', async (data) => {
-
-//     const chat_id = data.chat_id || data.chatId;
-//     const sender_id = data.sender_id || data.senderId;
-//     const text = data.text;
-
-//     try {
-
-//       const [result] = await db.execute(
-//         'INSERT INTO chat_messages (chat_id, sender_id, message_text) VALUES (?, ?, ?)',
-//         [chat_id, sender_id, text]
-//       );
-
-//       // Retrieve the exact saved row (ensures correct timestamp)
-//       const [rows] = await db.execute(
-//         `SELECT 
-//           sender_id AS SenderId,
-//           message_text AS MessageText,
-//           DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%sZ') AS Timestamp,
-//           chat_id AS ChatId
-//         FROM chat_messages
-//         WHERE message_id = ?`,
-//         [result.insertId]
-//       );
-
-//       const message = rows[0];
-
-//       io.to(String(chat_id)).emit('receive_message', message);
-
-//     } catch (err) {
-
-//       console.error('❌ Failed to save/send message:', err.message);
-
-//     }
-
-//   });
-
-//   socket.on('disconnect', () => {
-
-//     console.log(`Client disconnected: ${socket.id}`);
-
-//   });
-
-// });
-
-
-// // 8. Start the Server
-// const PORT = process.env.PORT || 5000;
-
-// server.listen(PORT, '0.0.0.0', () => {
-
-//   console.log(`🚀 Chat Microservice running on port ${PORT}`);
-
-// });
+const express = require("express");
+const http = require("http");
+const cors = require("cors");
+const { Server } = require("socket.io");
+const mysql = require("mysql2/promise");
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// ─── DB Connection Pool ───────────────────────────────────────────────────────
+const db = mysql.createPool({
+  host: process.env.DB_HOST || "127.0.0.1",       // chat-db
+  port: parseInt(process.env.DB_PORT) || 3312,  // 3306
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "root",
+  database: process.env.DB_NAME || "chat_db",
+  waitForConnections: true,
+  connectionLimit: 10,
+});
+
+// Test DB connection on startup
+db.getConnection()
+  .then((conn) => {
+    console.log("Connected to chat_db");
+    conn.release();
+  })
+  .catch((err) => {
+    console.error("Failed to connect to chat_db:", err.message);
+  });
+
+// ─── Auth Middleware ──────────────────────────────────────────────────────────
+function mockAuth(req, res, next) {
+  req.user = {
+    id: req.headers["x-user-id"],
+    role: req.headers["x-user-role"] || "user",
+  };
+
+  if (!req.user.id) {
+    return res.status(401).json({ message: "Missing x-user-id header" });
+  }
+
+  next();
+}
+
+// ─── DB Helpers ──────────────────────────────────────────────────────────────
+async function getChatById(chatId) {
+    const [rows] = await db.query(
+      "SELECT * FROM chat_rooms WHERE chat_id = ?",
+      [chatId]
+    );
+    return rows[0] || null;
+  }
+  
+  async function getChatsByUserId(userId) {
+    const [rows] = await db.query(
+      "SELECT * FROM chat_rooms WHERE user_id1 = ? OR user_id2 = ?",
+      [userId, userId]
+    );
+    return rows;
+  }
+  
+  async function getMessagesByChatId(chatId) {
+    const [rows] = await db.query(
+      "SELECT * FROM chat_messages WHERE chat_id = ? ORDER BY created_at ASC",
+      [chatId]
+    );
+    return rows;
+  }
+  
+  async function saveMessage(chatId, senderId, content) {
+    const [result] = await db.query(
+      "INSERT INTO chat_messages (chat_id, sender_id, message_text, created_at) VALUES (?, ?, ?, NOW())",
+      [chatId, senderId, content]
+    );
+    return {
+      id: result.insertId.toString(),
+      chatId: String(chatId),
+      senderId: String(senderId),
+      content: content,
+      createdAt: new Date().toISOString(),
+    };
+  }
+  
+  // ─── Participant Check ────────────────────────────────────────────────────────
+  function isChatParticipant(chat, user) {
+    return (
+      String(chat.user_id1) === String(user.id) ||
+      String(chat.user_id2) === String(user.id) ||
+      user.role === "admin"
+    );
+  }
+
+async function requireChatParticipant(req, res, next) {
+  try {
+    const chatId = req.params.chatId || req.params.id;
+    const chat = await getChatById(chatId);
+
+    if (!chat) {
+      return res.status(404).json({ message: "Chat not found" });
+    }
+
+    if (!isChatParticipant(chat, req.user)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    req.chat = chat;
+    next();
+  } catch (error) {
+    console.error("Chat access check failed:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// ─── REST Routes ─────────────────────────────────────────────────────────────
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+// Get all chats for a user
+app.get("/users/:userId/chats", async (req, res) => {
+  try {
+    const chats = await getChatsByUserId(req.params.userId);
+    res.json(chats);
+  } catch (error) {
+    console.error("Error fetching chats:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Get single chat
+app.get("/chats/:chatId", mockAuth, requireChatParticipant, async (req, res) => {
+  res.json(req.chat);
+});
+
+// Get messages for a chat
+app.get("/chats/:chatId/messages", mockAuth, requireChatParticipant, async (req, res) => {
+  try {
+    const messages = await getMessagesByChatId(req.params.chatId);
+    res.json(messages);
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Post a message (REST fallback)
+app.post("/chats/:chatId/messages", mockAuth, requireChatParticipant, async (req, res) => {
+  const { content } = req.body;
+
+  if (!content || !String(content).trim()) {
+    return res.status(400).json({ message: "Message content is required" });
+  }
+
+  try {
+    const newMessage = await saveMessage(
+      req.params.chatId,
+      req.user.id,
+      String(content).trim()
+    );
+
+    res.status(201).json({ message: "Message sent", data: newMessage });
+  } catch (error) {
+    console.error("Error saving message:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// ─── Socket.IO ───────────────────────────────────────────────────────────────
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id);
+
+  socket.on("join_conversation", async ({ chatId, userId, role }) => {
+    try {
+      const chat = await getChatById(chatId);
+
+      if (!chat) {
+        return socket.emit("socket_error", { message: "Chat not found" });
+      }
+
+      const user = { id: userId, role: role || "user" };
+
+      if (!isChatParticipant(chat, user)) {
+        return socket.emit("socket_error", { message: "Forbidden" });
+      }
+
+      const roomName = `chat:${chatId}`;
+      socket.join(roomName);
+
+      socket.emit("joined_conversation", {
+        roomName,
+        chatId: String(chatId),
+      });
+
+      console.log(`User ${userId} (${role}) joined ${roomName}`);
+    } catch (error) {
+      console.error("join_conversation failed:", error);
+      socket.emit("socket_error", { message: "Internal server error" });
+    }
+  });
+
+  socket.on("send_message", async ({ chatId, userId, role, content }) => {
+    try {
+      const chat = await getChatById(chatId);
+
+      if (!chat) {
+        return socket.emit("socket_error", { message: "Chat not found" });
+      }
+
+      const user = { id: userId, role: role || "user" };
+
+      if (!isChatParticipant(chat, user)) {
+        return socket.emit("socket_error", { message: "Forbidden" });
+      }
+
+      if (!content || !String(content).trim()) {
+        return socket.emit("socket_error", { message: "Message content is required" });
+      }
+
+      // Save to DB and broadcast
+      const newMessage = await saveMessage(chatId, userId, String(content).trim());
+
+      io.to(`chat:${chatId}`).emit("receive_message", newMessage);
+
+      console.log(`Message in chat:${chatId} from user ${userId}`);
+    } catch (error) {
+      console.error("send_message failed:", error);
+      socket.emit("socket_error", { message: "Internal server error" });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Socket disconnected:", socket.id);
+  });
+});
+
+server.listen(5001, () => {
+  console.log("Chat socket server running on port 5001");
+});
