@@ -34,6 +34,11 @@ const mapBootstrapMessage = (msg, idx) => ({
   chatId: msg.chatId ?? msg.chat_id,
 });
 
+const isNotFoundError = (error) => {
+  const message = String(error?.message || "");
+  return /^\[404\]/.test(message) || message.includes("No settlement proposal found");
+};
+
 function ChatPage({ currentUserId }) {
   const [searchParams] = useSearchParams();
   const wsRef = useRef(null);
@@ -255,7 +260,7 @@ function ChatPage({ currentUserId }) {
           }
         }
       } catch (error) {
-        if (error?.response?.status === 404) {
+        if (isNotFoundError(error)) {
           if (latestProposalRef.current) {
             setLatestProposal(null);
           }
