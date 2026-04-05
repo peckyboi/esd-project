@@ -158,11 +158,9 @@ def create_settlement_proposal(order_id: int, payload: CreateProposalRequest, db
     return proposal
 
 
-@router.get("/disputes/{order_id}/settlement/proposals/latest", response_model=ProposalResponse)
+@router.get("/disputes/{order_id}/settlement/proposals/latest", response_model=ProposalResponse | None)
 def get_latest_settlement_proposal(order_id: int, db: Session = Depends(get_db)):
     proposal = _get_latest_proposal(db, order_id)
-    if not proposal:
-        raise HTTPException(status_code=404, detail="No settlement proposal found")
     return proposal
 
 #mark as rejected
