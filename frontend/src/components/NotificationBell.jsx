@@ -11,6 +11,12 @@ function NotificationBell({
 }) {
   const [open, setOpen] = useState(false);
 
+  const handleToggleOpen = () => {
+    const next = !open;
+    setOpen(next);
+    if (next && onOpen) onOpen();
+  };
+
   const formatDate = (dateStr) =>
     new Date(dateStr).toLocaleString("en-SG", {
       day: "numeric", month: "short", year: "numeric",
@@ -20,13 +26,7 @@ function NotificationBell({
   return (
     <div className="relative">
       <button
-        onClick={() =>
-          setOpen((prev) => {
-            const next = !prev;
-            if (next && onOpen) onOpen();
-            return next;
-          })
-        }
+        onClick={handleToggleOpen}
         aria-label="Notifications"
       >
         <Avatar className="h-10 w-10 border-2 border-border bg-card transition-colors hover:bg-muted">
