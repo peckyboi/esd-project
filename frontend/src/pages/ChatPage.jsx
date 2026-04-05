@@ -1,217 +1,401 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { socket } from "@/lib/socket";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
 import GigInfoPanel from "@/components/chat/GigInfoPanel";
 import { Card } from "@/components/retroui/Card";
-
-const API_BASE_URL = "http://localhost:8090";
+import {
+  acceptSettlementProposal,
+  createSettlementProposal,
+  fetchChatBootstrap,
+  fetchChatInbox,
+  getLatestSettlementProposal,
+  rejectSettlementProposal,
+} from "@/api/disputeCompositeApi";
 
 const fallbackGig = {
-  title: "Loading gig details...",
-  freelancer: "Loading...",
+  title: "Select a dispute chat",
+  freelancer: "-",
   price: "-",
   deliveryTime: "-",
-  status: "active",
-  statusMessage: "Select a chat to view details.",
-  actionPrimary: "Resolve Dispute",
-  actionSecondary: "Issue Refund",
-  actionMessage: "Disputes are handled through direct communication. If unresolved, refund is processed.",
+  status: "unknown",
+  statusMessage: "Use the chat to resolve disputes. Settlements require both parties.",
+  actionPrimary: "Issue Refund",
+  actionSecondary: "Release Payment",
+  actionMessage: "Settlement requests can be accepted or rejected by the counterparty.",
 };
 
-function ChatPage({ currentUserId, currentUserRole }) {
+const mapBootstrapMessage = (msg, idx) => ({
+  id: msg.messageId ?? msg.message_id ?? `${msg.chat_id ?? msg.chatId ?? "chat"}-${idx}`,
+  senderId: msg.senderId ?? msg.sender_id,
+  text: msg.content ?? msg.message_text ?? "",
+  timestamp: msg.createdAt ?? msg.created_at ?? null,
+  chatId: msg.chatId ?? msg.chat_id,
+});
+
+function ChatPage({ currentUserId }) {
+  const [searchParams] = useSearchParams();
+  const wsRef = useRef(null);
+  const latestProposalRef = useRef(null);
+
   const [chats, setChats] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [gig, setGig] = useState(fallbackGig);
+  const [latestProposal, setLatestProposal] = useState(null);
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [busyAction, setBusyAction] = useState(false);
   const [showPanel, setShowPanel] = useState(true);
 
   useEffect(() => {
-    const fetchChats = async () => {
-      try {
-        setLoadingChats(true);
+    latestProposalRef.current = latestProposal;
+  }, [latestProposal]);
 
-        const response = await fetch(`${API_BASE_URL}/users/${currentUserId}/chats`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch chats: ${response.status}`);
+  const activeChat = useMemo(
+    () => chats.find((chat) => String(chat.id) === String(activeChatId)) || null,
+    [chats, activeChatId],
+  );
+
+  const refreshInbox = useCallback(async () => {
+    if (!currentUserId) return;
+    setLoadingChats(true);
+    try {
+      const data = await fetchChatInbox(currentUserId);
+      const mapped = data.map((item) => ({
+        id: item.chat_id,
+        orderId: item.order_id,
+        chatStatus: item.chat_status,
+        orderStatus: item.order_status,
+        otherUserId: item.other_user_id,
+        name: `User ${item.other_user_id}`,
+        lastMessage: `${item.chat_status.toLowerCase()} • ${item.order_status}`,
+      }));
+
+      setChats(mapped);
+
+      const queryChatId = searchParams.get("chatId");
+      const queryOrderId = searchParams.get("orderId");
+
+      if (queryChatId && mapped.some((c) => String(c.id) === String(queryChatId))) {
+        setActiveChatId(Number(queryChatId));
+      } else if (queryOrderId) {
+        const match = mapped.find((c) => String(c.orderId) === String(queryOrderId));
+        if (match) {
+          setActiveChatId(match.id);
+        } else if (mapped.length > 0) {
+          setActiveChatId((prev) => prev ?? mapped[0].id);
         }
-
-        const data = await response.json();
-
-        const mappedChats = data.map((room) => {
-          const isUser1 = String(room.userId1) === String(currentUserId);
-          const otherUserId = isUser1 ? room.userId2 : room.userId1;
-              
-          return {
-            id: room.chatId,
-            name: otherUserId !== undefined ? String(otherUserId) : "Unknown",
-            lastMessage: room.status || "No messages yet",
-            raw: room,
-          };
-        });
-        
-        console.log("Mapped chats:", mappedChats);
-        setChats(mappedChats);
-
-        if (mappedChats.length > 0) {
-          setActiveChatId((prev) => prev ?? mappedChats[0].id);
-        }
-      } catch (error) {
-        console.error("Error fetching chats:", error);
-        setChats([]);
-      } finally {
-        setLoadingChats(false);
+      } else if (mapped.length > 0) {
+        setActiveChatId((prev) => prev ?? mapped[0].id);
+      } else {
+        setActiveChatId(null);
       }
-    };
-
-    fetchChats();
-  }, [currentUserId]);
+    } catch (error) {
+      console.error("Failed to load chat inbox:", error);
+      setChats([]);
+      setActiveChatId(null);
+    } finally {
+      setLoadingChats(false);
+    }
+  }, [currentUserId, searchParams]);
 
   useEffect(() => {
-    if (!activeChatId) {
+    refreshInbox();
+  }, [refreshInbox]);
+
+  useEffect(() => {
+    if (!activeChatId || !currentUserId) {
       setMessages([]);
+      setLatestProposal(null);
       setGig(fallbackGig);
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
       return;
     }
 
-    const fetchChatMessages = async () => {
-      try {
-        setLoadingMessages(true);
+    let cancelled = false;
 
-        const response = await fetch(`${API_BASE_URL}/chats/${activeChatId}/messages`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch messages: ${response.status}`);
+    const loadBootstrapAndConnect = async () => {
+      setLoadingMessages(true);
+      try {
+        const bootstrap = await fetchChatBootstrap(activeChatId, currentUserId);
+        if (cancelled) return;
+
+        const mappedMessages = (bootstrap.messages || []).map(mapBootstrapMessage);
+        setMessages(mappedMessages);
+        setLatestProposal(bootstrap.latest_proposal || null);
+
+        if (wsRef.current) {
+          wsRef.current.close();
+          wsRef.current = null;
         }
 
-        const data = await response.json();
+        const ws = new WebSocket(bootstrap.ws_url);
+        wsRef.current = ws;
 
-        const mappedMessages = data.map((msg) => ({
-          id: msg.message_id,
-          senderId: msg.sender_id,
-          text: msg.message_text,
-          timestamp: msg.created_at,
-          chatId: msg.chat_id,
-        }));
+        ws.onopen = () => {
+          ws.send(JSON.stringify({ type: "join_conversation" }));
+        };
 
-        setMessages(mappedMessages);
+        ws.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            if (payload.type !== "receive_message") return;
+            setMessages((prev) => {
+              const normalized = {
+                id: payload.messageId ?? payload.id,
+                senderId: payload.senderId ?? payload.sender_id,
+                text: payload.content ?? payload.message_text ?? "",
+                timestamp: payload.createdAt ?? payload.created_at ?? null,
+                chatId: payload.chatId ?? payload.chat_id ?? activeChatId,
+              };
+              if (prev.some((m) => String(m.id) === String(normalized.id))) {
+                return prev;
+              }
+              return [...prev, normalized];
+            });
+          } catch (error) {
+            console.error("Invalid websocket payload:", error);
+          }
+        };
+
+        ws.onerror = (err) => {
+          console.error("WebSocket error:", err);
+        };
       } catch (error) {
-        console.error("Error fetching messages:", error);
-        setMessages([]);
+        if (!cancelled) {
+          console.error("Failed to bootstrap chat:", error);
+          setMessages([]);
+          setLatestProposal(null);
+        }
       } finally {
-        setLoadingMessages(false);
+        if (!cancelled) setLoadingMessages(false);
       }
     };
 
-    fetchChatMessages();
-  }, [activeChatId]);
+    loadBootstrapAndConnect();
+
+    return () => {
+      cancelled = true;
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, [activeChatId, currentUserId]);
 
   useEffect(() => {
-    const activeChat = chats.find((chat) => String(chat.id) === String(activeChatId));
-
     if (!activeChat) {
       setGig(fallbackGig);
       return;
     }
 
+    const isClosed = activeChat.chatStatus !== "OPEN";
+    const pending = latestProposal?.status === "PENDING" ? latestProposal : null;
+    const waitingForMe = pending && Number(pending.proposer_id) !== Number(currentUserId);
+    const waitingForOther = pending && Number(pending.proposer_id) === Number(currentUserId);
+
+    let actionPrimary = "Issue Refund";
+    let actionSecondary = "Release Payment";
+    let actionMessage = "Settlement requests can be accepted or rejected by the counterparty.";
+
+    if (isClosed) {
+      actionPrimary = "Dispute Closed";
+      actionSecondary = "No Further Action";
+      actionMessage = "This dispute has been settled. Chat is now read-only.";
+    } else if (waitingForMe) {
+      actionPrimary = "Accept Proposal";
+      actionSecondary = "Reject Proposal";
+      actionMessage = `Pending ${pending.action.toLowerCase()} proposal from other party.`;
+    } else if (waitingForOther) {
+      actionPrimary = `Requested ${pending.action.toLowerCase()}`;
+      actionSecondary = "Awaiting Response";
+      actionMessage = "Waiting for counterparty to accept or reject your proposal.";
+    }
+
     setGig({
-      title: `Order #${activeChat.raw.orderId ?? "-"}`,
+      title: `Order #${activeChat.orderId}`,
       freelancer: activeChat.name,
       price: "-",
       deliveryTime: "-",
-      status: activeChat.raw.status || "active",
-      statusMessage: "Chat details loaded. Gig details endpoint can be connected next.",
-      actionPrimary: "Resolve Dispute",
-      actionSecondary: "Issue Refund",
-      actionMessage: "Disputes are handled through direct communication. If unresolved, refund is processed.",
+      status: activeChat.orderStatus || "unknown",
+      statusMessage: `Chat ${activeChat.chatStatus.toLowerCase()} • Order ${activeChat.orderStatus}`,
+      actionPrimary,
+      actionSecondary,
+      actionMessage,
     });
-  }, [activeChatId, chats]);
+  }, [activeChat, latestProposal, currentUserId]);
 
-  const activeChat = chats.find((chat) => String(chat.id) === String(activeChatId));
-
-  const activeChatWithMessages = activeChat
-    ? {
-        ...activeChat,
-        messages,
-      }
-    : null;
-
-  // 1. Join room when active chat changes
   useEffect(() => {
-    if (!activeChatId || !currentUserId) return;
+    if (!activeChat?.orderId || !currentUserId) return;
 
-    socket.emit("join_conversation", {
-      chatId: activeChatId,
-      userId: currentUserId,
-      role: currentUserRole || "user",
-    });
+    let cancelled = false;
 
-    console.log("Joining room:", activeChatId);
-  }, [activeChatId, currentUserId, currentUserRole]);
+    const pollLatestProposal = async () => {
+      try {
+        const proposal = await getLatestSettlementProposal(activeChat.orderId);
+        if (cancelled) return;
 
+        const prev = latestProposalRef.current;
+        const changed =
+          !prev ||
+          Number(prev.id) !== Number(proposal.id) ||
+          String(prev.status) !== String(proposal.status) ||
+          Number(prev.responder_id || 0) !== Number(proposal.responder_id || 0);
 
-  // 2. Listen for incoming messages
-  useEffect(() => {
-    const handleReceiveMessage = (message) => {
-      console.log("Received message:", message);
-      if (String(message.chatId) === String(activeChatId)) {
-        setMessages((prev) => {
-          const exists = prev.some((m) => String(m.id) === String(message.id));
-          if (exists) return prev;
-          return [...prev, {
-            id: message.id,
-            senderId: message.senderId,
-            text: message.content,
-            timestamp: message.createdAt,
-            chatId: message.chatId,
-          }];
-        });
+        if (changed) {
+          setLatestProposal(proposal);
+
+          if (proposal.status === "EXECUTED" || proposal.status === "REJECTED") {
+            await refreshInbox();
+          }
+        }
+      } catch (error) {
+        if (error?.response?.status === 404) {
+          if (latestProposalRef.current) {
+            setLatestProposal(null);
+          }
+          return;
+        }
+        console.error("Failed polling latest settlement proposal:", error);
       }
     };
 
-    const handleSocketError = (err) => {
-      console.error("Socket error:", err);
-    };
-
-    socket.on("receive_message", handleReceiveMessage);
-    socket.on("socket_error", handleSocketError);
+    pollLatestProposal();
+    const intervalId = setInterval(pollLatestProposal, 2500);
 
     return () => {
-      socket.off("receive_message", handleReceiveMessage);
-      socket.off("socket_error", handleSocketError);
+      cancelled = true;
+      clearInterval(intervalId);
     };
-  }, [activeChatId]);
+  }, [activeChat?.orderId, currentUserId, refreshInbox]);
 
+  const handleSendMessage = useCallback(
+    (content) => {
+      const ws = wsRef.current;
+      if (!activeChatId || !currentUserId || !ws || ws.readyState !== WebSocket.OPEN) {
+        console.error("Cannot send message: socket not connected.");
+        return;
+      }
+      const trimmed = String(content || "").trim();
+      if (!trimmed) return;
+      ws.send(
+        JSON.stringify({
+          type: "send_message",
+          senderId: currentUserId,
+          content: trimmed,
+        }),
+      );
+    },
+    [activeChatId, currentUserId],
+  );
 
-  // 3. Send message handler
-  const handleSendMessage = useCallback((content) => {
-    console.log("handleSendMessage called with:", content);
-    console.log("activeChatId:", activeChatId);
-    console.log("currentUserId:", currentUserId);
-    console.log("socket connected:", socket.connected);
-  
-    if (!activeChatId || !currentUserId) {
-      console.error("Cannot send: missing chatId or userId");
-      return;
+  const handleCreateProposal = useCallback(
+    async (action) => {
+      if (!activeChat || busyAction) return;
+      setBusyAction(true);
+      try {
+        const proposal = await createSettlementProposal(activeChat.orderId, {
+          proposer_id: currentUserId,
+          action,
+          amount: null,
+        });
+        setLatestProposal(proposal);
+      } catch (error) {
+        console.error(`Failed to create ${action} proposal:`, error);
+      } finally {
+        setBusyAction(false);
+      }
+    },
+    [activeChat, busyAction, currentUserId],
+  );
+
+  const handleAcceptProposal = useCallback(async () => {
+    if (!activeChat || !latestProposal || busyAction) return;
+    setBusyAction(true);
+    try {
+      const result = await acceptSettlementProposal(
+        activeChat.orderId,
+        latestProposal.id,
+        currentUserId,
+      );
+      setLatestProposal(result.proposal);
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === activeChat.id
+            ? { ...c, chatStatus: "CLOSED", orderStatus: result.order?.status || c.orderStatus, lastMessage: `closed • ${result.order?.status || c.orderStatus}` }
+            : c,
+        ),
+      );
+      await refreshInbox();
+    } catch (error) {
+      console.error("Failed to accept settlement proposal:", error);
+    } finally {
+      setBusyAction(false);
     }
-  
-    const trimmed = String(content || "").trim();
-    if (!trimmed) {
-      console.error("Cannot send: empty content");
-      return;
+  }, [activeChat, latestProposal, busyAction, currentUserId, refreshInbox]);
+
+  const handleRejectProposal = useCallback(async () => {
+    if (!activeChat || !latestProposal || busyAction) return;
+    setBusyAction(true);
+    try {
+      const proposal = await rejectSettlementProposal(
+        activeChat.orderId,
+        latestProposal.id,
+        currentUserId,
+      );
+      setLatestProposal(proposal);
+      await refreshInbox();
+    } catch (error) {
+      console.error("Failed to reject settlement proposal:", error);
+    } finally {
+      setBusyAction(false);
     }
-  
-    socket.emit("send_message", {
-      chatId: activeChatId,
-      userId: currentUserId,
-      role: currentUserRole || "user",
-      content: trimmed,
-    });
-  
-    console.log("Emitted send_message");
-  }, [activeChatId, currentUserId, currentUserRole]);
+  }, [activeChat, latestProposal, busyAction, currentUserId, refreshInbox]);
+
+  const panelActions = useMemo(() => {
+    if (!activeChat) {
+      return { onPrimary: null, onSecondary: null, secondaryDisabled: true, inputDisabled: true };
+    }
+
+    const isClosed = activeChat.chatStatus !== "OPEN";
+    const pending = latestProposal?.status === "PENDING" ? latestProposal : null;
+
+    if (isClosed) {
+      return { onPrimary: null, onSecondary: null, secondaryDisabled: true, inputDisabled: true };
+    }
+
+    if (pending) {
+      const proposedByMe = Number(pending.proposer_id) === Number(currentUserId);
+      if (proposedByMe) {
+        return { onPrimary: null, onSecondary: null, secondaryDisabled: true, inputDisabled: false };
+      }
+      return {
+        onPrimary: handleAcceptProposal,
+        onSecondary: handleRejectProposal,
+        secondaryDisabled: false,
+        inputDisabled: false,
+      };
+    }
+
+    return {
+      onPrimary: () => handleCreateProposal("REFUND"),
+      onSecondary: () => handleCreateProposal("RELEASE"),
+      secondaryDisabled: false,
+      inputDisabled: false,
+    };
+  }, [
+    activeChat,
+    latestProposal,
+    currentUserId,
+    handleAcceptProposal,
+    handleRejectProposal,
+    handleCreateProposal,
+  ]);
 
   return (
     <main className="h-screen flex flex-col bg-background p-4">
@@ -221,54 +405,41 @@ function ChatPage({ currentUserId, currentUserRole }) {
         }`}
       >
         <Card>
-          <ChatList
-            chats={chats}
-            activeChatId={activeChatId}
-            onSelectChat={setActiveChatId}
-          />
+          <ChatList chats={chats} activeChatId={activeChatId} onSelectChat={setActiveChatId} />
           {loadingChats && <div className="p-4 text-sm text-muted-foreground">Loading chats...</div>}
         </Card>
 
         <div className="relative flex flex-col min-h-0 h-full">
-          {/* Toggle button — top right corner of chat column */}
           <button
             onClick={() => setShowPanel((prev) => !prev)}
-            className="absolute top-[10px] right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 text-sm 
-            font-semibold bg-white text-black border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] 
-            hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all duration-100"
+            className="absolute top-[10px] right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold bg-white text-black border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all duration-100"
             title={showPanel ? "Hide details panel" : "Show details panel"}
           >
-            {showPanel ? (
-              // Panel-close icon
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/><path d="m17 9 3 3-3 3"/>
-              </svg>
-            ) : (
-              // Panel-open icon
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/><path d="m21 15-3-3 3-3"/>
-              </svg>
-            )}
             {showPanel ? "Hide Details" : "Show Details"}
           </button>
 
-        <Card className="overflow-hidden rounded-xl flex flex-col bg-card shadow-md h-full min-h-0">
-          <ChatWindow
-            chat={activeChatWithMessages}
-            currentUserId={currentUserId}
-            messages={messages}
-            loading={loadingMessages}
-            // onSendMessage={handleSendMessage}
-          />
-        </Card>
-      </div>
-      {showPanel && (
-        <Card className="overflow-hidden p-1 bg-muted rounded-md">
-          <GigInfoPanel gig={gig} />
-        </Card>
-      )}
+          <Card className="overflow-hidden rounded-xl flex flex-col bg-card shadow-md h-full min-h-0">
+            <ChatWindow
+              chat={activeChat ? { ...activeChat, messages } : null}
+              currentUserId={currentUserId}
+              messages={messages}
+              loading={loadingMessages}
+              onSendMessage={handleSendMessage}
+              inputDisabled={panelActions.inputDisabled}
+            />
+          </Card>
+        </div>
+
+        {showPanel && (
+          <Card className="overflow-hidden p-1 bg-muted rounded-md">
+            <GigInfoPanel
+              gig={gig}
+              onPrimaryAction={panelActions.onPrimary}
+              onSecondaryAction={panelActions.onSecondary}
+              secondaryDisabled={panelActions.secondaryDisabled || busyAction}
+            />
+          </Card>
+        )}
       </div>
     </main>
   );

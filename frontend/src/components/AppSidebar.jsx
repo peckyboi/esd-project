@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/retroui/Button";
 import { Text } from "@/components/retroui/Text";
-import { House, ClipboardList } from "lucide-react";
+import { House, ClipboardList, MessageSquare } from "lucide-react";
 
 const navItems = [
   { label: "Browse Gigs", path: "/home", icon: House },
   { label: "My Orders", path: "/orders", icon: ClipboardList },
+  { label: "Disputes", path: "/chat", icon: MessageSquare },
 ];
 
 function AppSidebar() {

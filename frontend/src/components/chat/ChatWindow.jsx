@@ -2,7 +2,14 @@ import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
 import { Text } from "@/components/retroui/Text";
 
-function ChatWindow({ chat, messages = [], currentUserId, loading = false, onSendMessage }) {
+function ChatWindow({
+  chat,
+  messages = [],
+  currentUserId,
+  loading = false,
+  onSendMessage,
+  inputDisabled = false,
+}) {
 
   if (!chat) {
     return (
@@ -40,7 +47,7 @@ function ChatWindow({ chat, messages = [], currentUserId, loading = false, onSen
       </div>
 
       <div className="p-4 bg-card border-t border-border bg-muted w-full">
-        <ChatInput onSendMessage={onSendMessage} />  {/* ← PASS THE HANDLER */}
+        <ChatInput onSendMessage={onSendMessage} disabled={inputDisabled} />
       </div>
     </section>
   );
