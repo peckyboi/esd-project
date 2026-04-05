@@ -346,6 +346,26 @@ services:
     networks:
       - ms-net
 
+  # 9. Seeder file
+  seeder:
+    build:
+      context: ./seed
+      dockerfile: Dockerfile
+    container_name: seeder
+    depends_on:
+      order-db:
+        condition: service_healthy
+      payment-db:
+        condition: service_healthy
+      review-db:
+        condition: service_healthy
+      freelance-job-db:
+        condition: service_healthy
+    networks:
+      - ms-net
+    command: ["python", "seed_all.py"]
+    restart: "no"
+
 volumes:
   review_db_data:
   order_db_data:
