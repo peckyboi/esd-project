@@ -1,10 +1,10 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Input } from "@/components/retroui/Input";
 import { Select } from "@/components/retroui/Select";
 import { Text } from "@/components/retroui/Text";
 import { Avatar } from "@/components/retroui/Avatar";
-import { User, MessageSquare } from "lucide-react";
+import { User } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { useActor } from "@/context/actorContext";
 import { getNotificationsByUser } from "@/api/notificationApi";
@@ -89,18 +89,6 @@ function AppTopBar() {
                 </Avatar.Fallback>
               </Avatar>
             </a>
-            <Link
-              to="/chat"
-              title="Messages"
-              aria-label="Messages"
-              className="text-foreground no-underline"
-            >
-              <Avatar className="h-10 w-10 border-2 border-border bg-card transition-colors hover:bg-muted">
-                <Avatar.Fallback className="bg-transparent">
-                  <MessageSquare size={22} />
-                </Avatar.Fallback>
-              </Avatar>
-            </Link>
             <NotificationBell
               notifications={notifications}
               loading={isNotifLoading}

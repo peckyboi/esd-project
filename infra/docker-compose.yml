@@ -254,32 +254,7 @@ services:
     networks:
       - ms-net
 
-  # 7. Chat Service
-  chat_microservice:
-    build:
-      context: ../services/chat-microservice
-      dockerfile: Dockerfile
-    container_name: chat_microservice
-    restart: always
-    ports:
-      - "8090:8090"
-    environment:
-      PORT: 8090
-      ENVIRONMENT: production
-      DB_HOST: chat-db
-      DB_PORT: 3306
-      DB_USER: root
-      DB_PASSWORD: root
-      DB_NAME: chat_db
-      RABBITMQ_URL: amqp://rabbitmq:5672
-    depends_on:
-      chat-db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_started
-    networks:
-      - ms-net
-
+  # 7. Chat Service (v2)
   chat-db:
     image: mysql:8.4
     container_name: chat-db
@@ -298,6 +273,79 @@ services:
     networks:
       - ms-net
 
+  chat-microservice-2:
+    build:
+      context: ../services/chat-microservice-2
+      dockerfile: Dockerfile
+    container_name: chat-microservice-2
+    depends_on:
+      chat-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: chat-db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: chat_db
+    ports:
+      - "8090:8090"
+    networks:
+      - ms-net
+
+  # 8. Dispute Composite Service
+  dispute-composite-db:
+    image: mysql:8.4
+    container_name: dispute-composite-db
+    environment:
+      MYSQL_DATABASE: dispute_composite_db
+      MYSQL_USER: dispute_user
+      MYSQL_PASSWORD: dispute_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3313:3306"
+    volumes:
+      - dispute_composite_db_data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -proot_pass || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ms-net
+
+  dispute-composite:
+    build:
+      context: ../services/dispute-composite
+      dockerfile: Dockerfile
+    container_name: dispute-composite
+    depends_on:
+      dispute-composite-db:
+        condition: service_healthy
+      order-microservice:
+        condition: service_started
+      payment-microservice:
+        condition: service_started
+      chat-microservice-2:
+        condition: service_started
+    environment:
+      DB_HOST: dispute-composite-db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root_pass
+      DB_NAME: dispute_composite_db
+      ORDER_SERVICE_URL: http://order-microservice:8000
+      PAYMENT_SERVICE_URL: http://payment-microservice:8002
+      CHAT_SERVICE_URL: http://chat-microservice-2:8090
+      CHAT_WS_BASE_URL: ws://localhost:8090/ws/chats
+    ports:
+      - "8091:8091"
+    networks:
+      - ms-net
+
 volumes:
   review_db_data:
   order_db_data:
@@ -305,6 +353,7 @@ volumes:
   freelance_job_db_data:
   notification_db_data:
   chat_db_data:
+  dispute_composite_db_data:
 
 networks:
   ms-net:

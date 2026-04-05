@@ -10,11 +10,11 @@ import { useActor } from "@/context/actorContext";
 import { fetchGigById } from "@/api/browseGigApi";
 import {
     deliverOrder,
-    disputeOrder,
     listOrders,
     updateOrderPaymentReleaseResult,
 } from "@/api/orderApi";
 import { releasePayment } from "@/api/paymentApi";
+import { startDispute } from "@/api/disputeCompositeApi";
 
 const ORDERS_PER_PAGE = 4;
 
@@ -194,9 +194,16 @@ export default function OrdersPage() {
                             onDeliver={(selectedOrder) => runAction(selectedOrder.id, () => deliverOrder(selectedOrder.id))}
                             onApprove={(selectedOrder) => runAction(selectedOrder.id, () => runApproveFlow(selectedOrder))}
                             onDispute={(selectedOrder) =>
-                                runAction(selectedOrder.id, () => disputeOrder(selectedOrder.id, "Disputed by client from UI"))
+                                runAction(selectedOrder.id, async () => {
+                                    const result = await startDispute({
+                                        orderId: selectedOrder.id,
+                                        actorUserId: resolvedUserId,
+                                        reason: "Disputed by client from UI",
+                                    });
+                                    navigate(`/chat?chatId=${result.chat?.chat_id ?? ""}&orderId=${selectedOrder.id}`);
+                                })
                             }
-                            onViewChat={() => {}}
+                            onViewChat={(selectedOrder) => navigate(`/chat?orderId=${selectedOrder.id}`)}
                         />
                     ))}
                 </div>

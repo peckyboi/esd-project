@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Input } from "@/components/retroui/Input";
 import { Button } from "@/components/retroui/Button";
 
-function ChatInput({ onSendMessage }) {
+function ChatInput({ onSendMessage, disabled = false }) {
   const [text, setText] = useState("");
 
   const handleSend = () => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (disabled || !trimmed) return;
     onSendMessage(trimmed);
     setText("");  // clear input after sending
   };
@@ -25,10 +25,11 @@ function ChatInput({ onSendMessage }) {
         placeholder="Type a message..."
         className="flex-1 h-12 bg-input border border-border"
         value={text}
+        disabled={disabled}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
       />
-      <Button onClick={handleSend}>Send</Button>
+      <Button onClick={handleSend} disabled={disabled}>Send</Button>
     </div>
   );
 }

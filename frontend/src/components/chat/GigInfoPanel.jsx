@@ -1,9 +1,7 @@
 import { Card } from "@/components/retroui/Card";
 import { Text } from "@/components/retroui/Text";
 import { Button } from "@/components/retroui/Button";
-import { Link } from "react-router-dom";
-
-export default function GigInfoPanel({ gig }) {
+export default function GigInfoPanel({ gig, onPrimaryAction, onSecondaryAction, secondaryDisabled = false }) {
     return (
         <aside className="p-3 flex flex-col gap-6 w-80">
 
@@ -29,8 +27,15 @@ export default function GigInfoPanel({ gig }) {
 
             <Card className="p-4 space-y-3">
                 <Text as='h6' className="font-medium font-semibold text-foreground">Actions</Text>
-                <Button className="w-full">{gig.actionPrimary}</Button>
-                <Button variant="outline" className="w-full">
+                <Button className="w-full" onClick={onPrimaryAction} disabled={!onPrimaryAction}>
+                    {gig.actionPrimary}
+                </Button>
+                <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={onSecondaryAction}
+                    disabled={!onSecondaryAction || secondaryDisabled}
+                >
                     {gig.actionSecondary}
                 </Button>
                 {gig.actionMessage && (

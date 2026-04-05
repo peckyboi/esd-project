@@ -64,13 +64,21 @@ def publish_payment_failed(order_id: int, payment_id: int, reason: str):
     )
 
 
-def publish_payment_completed(order_id: int, payment_id: int, status: str):
+def publish_payment_completed(
+    order_id: int,
+    payment_id: int,
+    status: str,
+    client_id: int | None = None,
+    freelancer_id: int | None = None,
+):
     publish_event(
         exchange="payment_events",
         event_type="payment.completed",
         data={
             "order_id": order_id,
             "payment_id": payment_id,
-            "status": status  # "released" or "refunded"
+            "status": status,  # "released" or "refunded"
+            "client_id": client_id,
+            "freelancer_id": freelancer_id,
         }
     )
