@@ -1,7 +1,9 @@
 import os
+import time
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.exc import OperationalError
 
 DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
 DB_PORT = os.getenv("DB_PORT", "3306")
@@ -23,6 +25,29 @@ def ensure_database_exists():
         conn.execute(text(f"CREATE DATABASE IF NOT EXISTS `{DB_NAME}`"))
         conn.commit()
     temp_engine.dispose()
+
+
+def wait_for_database(max_attempts: int = 30, delay_seconds: float = 2.0) -> None:
+    last_error = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            ensure_database_exists()
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            return
+        except OperationalError as exc:
+            last_error = exc
+            if attempt == max_attempts:
+                break
+            print(
+                f"[dispute-composite] DB not ready yet "
+                f"(attempt {attempt}/{max_attempts}). Retrying in {delay_seconds}s..."
+            )
+            time.sleep(delay_seconds)
+
+    raise RuntimeError(
+        f"Database not reachable after {max_attempts} attempts."
+    ) from last_error
 
 
 def get_db():

@@ -4,13 +4,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.clients import close_client, init_client
-from app.database import Base, engine, ensure_database_exists
+from app.database import Base, engine, wait_for_database
 from app.routes.disputes import router as disputes_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    ensure_database_exists()
+    wait_for_database()
     Base.metadata.create_all(bind=engine)
     await init_client()
     yield
