@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import ensure_database_exists, engine, Base
+from app.database import wait_for_database, engine, Base
 from app.service_client import init_client, close_client
 from app.routes.chats import router as chats_router
 
@@ -17,7 +17,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
-    ensure_database_exists()
+    wait_for_database()
     Base.metadata.create_all(bind=engine)
     await init_client()
 

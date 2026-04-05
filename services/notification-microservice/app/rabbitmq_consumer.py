@@ -1,6 +1,7 @@
 import json
 import os
 import threading
+import time
 
 import pika
 
@@ -178,30 +179,41 @@ def _process_message(body: bytes, message_id: str):
 
 def _consumer_loop():
     rabbitmq_host = os.getenv("RABBITMQ_HOST", "localhost")
-    params = pika.ConnectionParameters(host=rabbitmq_host)
-    connection = pika.BlockingConnection(params)
-    channel = connection.channel()
+    reconnect_delay = 5
 
-    channel.exchange_declare(exchange="order_events", exchange_type="fanout", durable=True)
-    channel.exchange_declare(exchange="payment_events", exchange_type="fanout", durable=True)
-
-    queue_name = "notification_service_events"
-    channel.queue_declare(queue=queue_name, durable=True)
-    channel.queue_bind(exchange="order_events", queue=queue_name)
-    channel.queue_bind(exchange="payment_events", queue=queue_name)
-
-    def callback(ch, method, properties, body):
+    while True:
+        connection = None
         try:
-            _process_message(body, properties.message_id)
-            ch.basic_ack(delivery_tag=method.delivery_tag)
-        except Exception as err:
-            print(f"Error processing message: {err}")
-            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+            params = pika.ConnectionParameters(host=rabbitmq_host, heartbeat=60)
+            connection = pika.BlockingConnection(params)
+            channel = connection.channel()
 
-    channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(queue=queue_name, on_message_callback=callback)
-    print("Notification service consumer started. Waiting for order events...")
-    channel.start_consuming()
+            channel.exchange_declare(exchange="order_events", exchange_type="fanout", durable=True)
+            channel.exchange_declare(exchange="payment_events", exchange_type="fanout", durable=True)
+
+            queue_name = "notification_service_events"
+            channel.queue_declare(queue=queue_name, durable=True)
+            channel.queue_bind(exchange="order_events", queue=queue_name)
+            channel.queue_bind(exchange="payment_events", queue=queue_name)
+
+            def callback(ch, method, properties, body):
+                try:
+                    _process_message(body, properties.message_id)
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
+                except Exception as err:
+                    print(f"Error processing message: {err}")
+                    ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+
+            channel.basic_qos(prefetch_count=1)
+            channel.basic_consume(queue=queue_name, on_message_callback=callback)
+            print("Notification service consumer started. Waiting for order events...")
+            channel.start_consuming()
+        except Exception as err:
+            print(f"RabbitMQ consumer not ready, retrying in {reconnect_delay}s: {err}")
+            time.sleep(reconnect_delay)
+        finally:
+            if connection and connection.is_open:
+                connection.close()
 
 
 def start_consumer_in_background():

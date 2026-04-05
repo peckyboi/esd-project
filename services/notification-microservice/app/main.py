@@ -4,8 +4,6 @@ from sqlalchemy.orm import Session
 
 from app import database, models, rabbitmq_consumer, schemas
 
-models.Base.metadata.create_all(bind=database.engine)
-
 app = FastAPI(title="Notification Microservice")
 
 app.add_middleware(
@@ -25,6 +23,8 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event():
+    database.wait_for_database()
+    models.Base.metadata.create_all(bind=database.engine)
     rabbitmq_consumer.start_consumer_in_background()
 
 
