@@ -146,7 +146,11 @@ EVENT_HANDLERS = {
     "OrderCompleted": _handle_order_completed,
     "OrderDisputed": _handle_order_disputed,
     "OrderCancelled": _handle_order_cancelled,
+    # Backward compatibility for older publishers
     "payment.completed": _handle_payment_completed,
+    # New camelCase payment settlement events
+    "paymentReleased": _handle_payment_completed,
+    "paymentRefunded": _handle_payment_completed,
 }
 
 

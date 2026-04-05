@@ -84,15 +84,14 @@ def release_payment(request: ReleasePaymentRequest, db: Session = Depends(get_db
         db.commit()
         db.refresh(payment)
         try:
-            rabbitmq.publish_payment_completed(
+            rabbitmq.publish_payment_released(
                 order_id=payment.order_id,
                 payment_id=payment.payment_id,
-                status=str(payment.status),
                 client_id=payment.client_id,
                 freelancer_id=payment.freelancer_id,
             )
         except Exception as err:
-            print(f"Failed to publish payment.completed event: {err}")
+            print(f"Failed to publish paymentReleased event: {err}")
 
     else:
         raise HTTPException(
@@ -129,15 +128,14 @@ def refund_payment(request: RefundPaymentRequest, db: Session = Depends(get_db))
         db.commit()
         db.refresh(payment)
         try:
-            rabbitmq.publish_payment_completed(
+            rabbitmq.publish_payment_refunded(
                 order_id=payment.order_id,
                 payment_id=payment.payment_id,
-                status=str(payment.status),
                 client_id=payment.client_id,
                 freelancer_id=payment.freelancer_id,
             )
         except Exception as err:
-            print(f"Failed to publish payment.completed event: {err}")
+            print(f"Failed to publish paymentRefunded event: {err}")
 
     else:
         raise HTTPException(
