@@ -99,12 +99,53 @@ def _handle_order_cancelled(db, data: dict):
     )
 
 
+def _handle_payment_completed(db, data: dict):
+    order_id = data.get("order_id")
+    status = str(data.get("status", "")).lower()
+    client_id = data.get("client_id")
+    freelancer_id = data.get("freelancer_id")
+    if not order_id:
+        return
+
+    if status == "released":
+        if freelancer_id:
+            _create_notification(
+                db,
+                user_id=freelancer_id,
+                order_id=order_id,
+                message=f"Payment for Order #{order_id} has been released to you.",
+            )
+        if client_id:
+            _create_notification(
+                db,
+                user_id=client_id,
+                order_id=order_id,
+                message=f"Payment for Order #{order_id} has been released to the freelancer.",
+            )
+    elif status == "refunded":
+        if client_id:
+            _create_notification(
+                db,
+                user_id=client_id,
+                order_id=order_id,
+                message=f"Payment for Order #{order_id} has been refunded to you.",
+            )
+        if freelancer_id:
+            _create_notification(
+                db,
+                user_id=freelancer_id,
+                order_id=order_id,
+                message=f"Order #{order_id} has been refunded to the client.",
+            )
+
+
 EVENT_HANDLERS = {
     "OrderCreated": _handle_order_created,
     "OrderDelivered": _handle_order_delivered,
     "OrderCompleted": _handle_order_completed,
     "OrderDisputed": _handle_order_disputed,
     "OrderCancelled": _handle_order_cancelled,
+    "payment.completed": _handle_payment_completed,
 }
 
 
@@ -142,10 +183,12 @@ def _consumer_loop():
     channel = connection.channel()
 
     channel.exchange_declare(exchange="order_events", exchange_type="fanout", durable=True)
+    channel.exchange_declare(exchange="payment_events", exchange_type="fanout", durable=True)
 
     queue_name = "notification_service_events"
     channel.queue_declare(queue=queue_name, durable=True)
     channel.queue_bind(exchange="order_events", queue=queue_name)
+    channel.queue_bind(exchange="payment_events", queue=queue_name)
 
     def callback(ch, method, properties, body):
         try:

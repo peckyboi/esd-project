@@ -8,7 +8,7 @@ from app.schemas import (
     RefundPaymentRequest,
     PaymentResponse
 )
-from app import stripe_client
+from app import stripe_client, rabbitmq
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -40,6 +40,14 @@ def hold_payment(request: HoldPaymentRequest, db: Session = Depends(get_db)):
         payment.stripe_payment_intent_id = result["payment_intent_id"]
         db.commit()
         db.refresh(payment)
+        try:
+            rabbitmq.publish_payment_success(
+                order_id=payment.order_id,
+                payment_id=payment.payment_id,
+                amount=float(payment.amount),
+            )
+        except Exception as err:
+            print(f"Failed to publish PaymentSuccess event: {err}")
 
     else:
         raise HTTPException(
@@ -75,6 +83,16 @@ def release_payment(request: ReleasePaymentRequest, db: Session = Depends(get_db
         payment.status = PaymentStatus.released
         db.commit()
         db.refresh(payment)
+        try:
+            rabbitmq.publish_payment_completed(
+                order_id=payment.order_id,
+                payment_id=payment.payment_id,
+                status=str(payment.status),
+                client_id=payment.client_id,
+                freelancer_id=payment.freelancer_id,
+            )
+        except Exception as err:
+            print(f"Failed to publish payment.completed event: {err}")
 
     else:
         raise HTTPException(
@@ -110,6 +128,16 @@ def refund_payment(request: RefundPaymentRequest, db: Session = Depends(get_db))
         payment.status = PaymentStatus.refunded
         db.commit()
         db.refresh(payment)
+        try:
+            rabbitmq.publish_payment_completed(
+                order_id=payment.order_id,
+                payment_id=payment.payment_id,
+                status=str(payment.status),
+                client_id=payment.client_id,
+                freelancer_id=payment.freelancer_id,
+            )
+        except Exception as err:
+            print(f"Failed to publish payment.completed event: {err}")
 
     else:
         raise HTTPException(
