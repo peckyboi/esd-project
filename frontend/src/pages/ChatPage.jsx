@@ -27,6 +27,7 @@ function ChatPage({ currentUserId, currentUserRole }) {
   const [gig, setGig] = useState(fallbackGig);
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [showPanel, setShowPanel] = useState(true);
 
   useEffect(() => {
     const fetchChats = async () => {
@@ -214,7 +215,11 @@ function ChatPage({ currentUserId, currentUserRole }) {
 
   return (
     <main className="h-screen flex flex-col bg-background p-4">
-      <div className="flex-1 grid grid-cols-[280px_1fr_340px] gap-4">
+      <div
+        className={`flex-1 grid gap-4 min-h-0 ${
+          showPanel ? "grid-cols-[280px_1fr_340px]" : "grid-cols-[280px_1fr]"
+        }`}
+      >
         <Card>
           <ChatList
             chats={chats}
@@ -224,19 +229,46 @@ function ChatPage({ currentUserId, currentUserRole }) {
           {loadingChats && <div className="p-4 text-sm text-muted-foreground">Loading chats...</div>}
         </Card>
 
-        <Card className="overflow-hidden rounded-xl flex flex-col bg-card shadow-md">
+        <div className="relative flex flex-col min-h-0 h-full">
+          {/* Toggle button — top right corner of chat column */}
+          <button
+            onClick={() => setShowPanel((prev) => !prev)}
+            className="absolute top-[10px] right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 text-sm 
+            font-semibold bg-white text-black border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] 
+            hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all duration-100"
+            title={showPanel ? "Hide details panel" : "Show details panel"}
+          >
+            {showPanel ? (
+              // Panel-close icon
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/><path d="m17 9 3 3-3 3"/>
+              </svg>
+            ) : (
+              // Panel-open icon
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/><path d="m21 15-3-3 3-3"/>
+              </svg>
+            )}
+            {showPanel ? "Hide Details" : "Show Details"}
+          </button>
+
+        <Card className="overflow-hidden rounded-xl flex flex-col bg-card shadow-md h-full min-h-0">
           <ChatWindow
             chat={activeChatWithMessages}
             currentUserId={currentUserId}
             messages={messages}
             loading={loadingMessages}
-            onSendMessage={handleSendMessage}
+            // onSendMessage={handleSendMessage}
           />
         </Card>
-
+      </div>
+      {showPanel && (
         <Card className="overflow-hidden p-1 bg-muted rounded-md">
           <GigInfoPanel gig={gig} />
         </Card>
+      )}
       </div>
     </main>
   );

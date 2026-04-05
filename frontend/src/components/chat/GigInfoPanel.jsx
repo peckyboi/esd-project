@@ -6,9 +6,6 @@ import { Link } from "react-router-dom";
 export default function GigInfoPanel({ gig }) {
     return (
         <aside className="p-3 flex flex-col gap-6 w-80">
-            <Link to="/home" className="self-end bg-white">
-                <Button variant="outline">← Back to Homepage</Button>
-            </Link>
 
             <Card className="p-5 space-y-3">
                 <Text as="h5" className="font-semibold text-lg text-foreground truncate">
