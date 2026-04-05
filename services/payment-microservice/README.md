@@ -44,7 +44,8 @@ Atomic microservice responsible for handling payment escrow, release and refund 
 ### Publishes
 - `PaymentSuccess` → payment_events exchange (after successful hold)
 - `PaymentFailed` → payment_events exchange (after failed hold)
-- `payment.completed` → payment_events exchange (after release or refund)
+- `paymentReleased` → payment_events exchange (after successful release)
+- `paymentRefunded` → payment_events exchange (after successful refund)
 
 ### Event Payload Format
 ```json

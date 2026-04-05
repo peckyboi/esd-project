@@ -82,3 +82,41 @@ def publish_payment_completed(
             "freelancer_id": freelancer_id,
         }
     )
+
+
+def publish_payment_released(
+    order_id: int,
+    payment_id: int,
+    client_id: int | None = None,
+    freelancer_id: int | None = None,
+):
+    publish_event(
+        exchange="payment_events",
+        event_type="paymentReleased",
+        data={
+            "order_id": order_id,
+            "payment_id": payment_id,
+            "status": "released",
+            "client_id": client_id,
+            "freelancer_id": freelancer_id,
+        },
+    )
+
+
+def publish_payment_refunded(
+    order_id: int,
+    payment_id: int,
+    client_id: int | None = None,
+    freelancer_id: int | None = None,
+):
+    publish_event(
+        exchange="payment_events",
+        event_type="paymentRefunded",
+        data={
+            "order_id": order_id,
+            "payment_id": payment_id,
+            "status": "refunded",
+            "client_id": client_id,
+            "freelancer_id": freelancer_id,
+        },
+    )
