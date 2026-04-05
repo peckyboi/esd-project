@@ -2,13 +2,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import Base, engine
+from app.database import Base, engine, wait_for_database
 from app.routes.chats import router as chats_router
 from app.routes.ws import router as ws_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup
+    wait_for_database()
     Base.metadata.create_all(bind=engine)
     yield
 
