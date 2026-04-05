@@ -245,6 +245,13 @@ function ChatPage({ currentUserId }) {
         const proposal = await getLatestSettlementProposal(activeChat.orderId);
         if (cancelled) return;
 
+        if (!proposal) {
+          if (latestProposalRef.current) {
+            setLatestProposal(null);
+          }
+          return;
+        }
+
         const prev = latestProposalRef.current;
         const changed =
           !prev ||
