@@ -366,6 +366,31 @@ services:
     command: ["python", "seed_all.py"]
     restart: "no"
 
+  # 10. Frontend
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    depends_on:
+      browse-gig-composite:
+        condition: service_started
+      order-microservice:
+        condition: service_started
+      notification-microservice:
+        condition: service_started
+      dispute-composite:
+        condition: service_started
+    environment:
+      VITE_API_BASE_URL: http://localhost:5173
+      VITE_DISPUTE_COMPOSITE_API_BASE_URL: http://localhost:8091
+      VITE_ORDER_API_BASE_URL: http://localhost:8000
+      VITE_NOTIFICATION_API_BASE_URL: http://localhost:8005
+    ports:
+      - "5173:5173"
+    networks:
+      - ms-net
+
 volumes:
   review_db_data:
   order_db_data:
