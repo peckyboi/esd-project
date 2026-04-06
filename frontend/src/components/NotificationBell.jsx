@@ -17,11 +17,16 @@ function NotificationBell({
     if (next && onOpen) onOpen();
   };
 
-  const formatDate = (dateStr) =>
-    new Date(dateStr).toLocaleString("en-SG", {
+  const formatDate = (dateStr) => {
+    const normalized = dateStr.endsWith("Z") || dateStr.includes("+")
+      ? dateStr
+      : dateStr + "Z";
+
+    return new Date(normalized).toLocaleString("en-SG", {
       day: "numeric", month: "short", year: "numeric",
       hour: "2-digit", minute: "2-digit",
     });
+  };
 
   return (
     <div className="relative">
