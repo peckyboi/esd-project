@@ -86,6 +86,7 @@ function ChatPage({ currentUserId }) {
         orderId: item.order_id,
         chatStatus: item.chat_status,
         orderStatus: item.order_status,
+        orderPrice: item.order_price ?? null,
         otherUserId: item.other_user_id,
         name: `User ${item.other_user_id}`,
         lastMessage: `${item.chat_status.toLowerCase()} • ${item.order_status}`,
@@ -251,7 +252,7 @@ function ChatPage({ currentUserId }) {
     setGig({
       title: `Order #${activeChat.orderId}`,
       freelancer: activeChat.name,
-      price: "-",
+      price: activeChat.orderPrice ?? null,
       deliveryTime: "-",
       status: activeChat.orderStatus || "unknown",
       statusMessage: `Chat ${activeChat.chatStatus.toLowerCase()} • Order ${activeChat.orderStatus}`,

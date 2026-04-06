@@ -2,6 +2,12 @@ import { Card } from "@/components/retroui/Card";
 import { Text } from "@/components/retroui/Text";
 import { Button } from "@/components/retroui/Button";
 export default function GigInfoPanel({ gig, onPrimaryAction, onSecondaryAction, secondaryDisabled = false }) {
+    const hasPrice = gig?.price !== null && gig?.price !== undefined && gig?.price !== "";
+    const normalizedPrice = hasPrice ? Number(gig.price) : null;
+    const priceDisplay = Number.isFinite(normalizedPrice)
+        ? `$${normalizedPrice % 1 === 0 ? normalizedPrice.toFixed(0) : normalizedPrice.toFixed(2)}`
+        : "-";
+
     return (
         <aside className="p-3 flex flex-col gap-6 w-80">
 
@@ -14,7 +20,7 @@ export default function GigInfoPanel({ gig, onPrimaryAction, onSecondaryAction, 
 
                 <div className="flex justify-between text-sm text-muted-foreground">
                     <Text className="truncate">{gig.freelancer}</Text>
-                    <Text>${gig.price}</Text>
+                    <Text>{priceDisplay}</Text>
                     <Text>{gig.deliveryTime}</Text>
                 </div>
 

@@ -23,6 +23,7 @@ class InboxItem(BaseModel):
     other_user_id: int
     chat_status: Literal["OPEN", "CLOSED"]
     order_status: str
+    order_price: Optional[float] = None
     latest_proposal_status: Optional[str] = None
 
 
