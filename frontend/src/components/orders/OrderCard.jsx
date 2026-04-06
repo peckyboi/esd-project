@@ -29,12 +29,22 @@ export default function OrderCard({
             break;
         case "completed":
         case "delivered":
+        case "released":
+        case "refunded":
             progressValue = 100;
             progressColor = "bg-green-500";
             break;
         case "disputed":
             progressValue = 100;
             progressColor = "bg-red-500";
+            break;
+        case "payment_failed":
+            progressValue = 100;
+            progressColor = "bg-red-500";
+            break;
+        case "cancelled":
+            progressValue = 100;
+            progressColor = "bg-red-400";
             break;
         default:
             progressValue = 0;
@@ -44,7 +54,7 @@ export default function OrderCard({
     const isBusy = actionLoading === order.id;
 
     return (
-        <Card className="p-4 relative flex flex-col gap-3">
+        <Card className="relative flex min-h-[280px] flex-col gap-3 p-4">
             <div className="flex justify-between items-start">
                 <Text as="h5" className="font-semibold">
                     {order.title}
@@ -65,7 +75,7 @@ export default function OrderCard({
 
             <Progress value={progressValue} className={`h-2 ${progressColor}`} />
 
-            <div className="flex gap-2 mt-2">
+            <div className="mt-auto flex gap-2 pt-2">
                 {order.status === "delivered" && actorRole === "client" ? (
                     <>
                         <Button className="flex-1" disabled={isBusy} onClick={() => onDispute(order)}>
