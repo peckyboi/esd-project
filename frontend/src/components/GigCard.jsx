@@ -5,10 +5,14 @@ import { Avatar } from "@/components/retroui/Avatar";
 import { Link } from "react-router-dom";
 import gigPlaceholder from "@/assets/gig-placeholder.svg";
 
-export default function GigCard({ gig, onClick }) {
+export default function GigCard({ gig, onClick, onPrefetch }) {
+  const handlePrefetch = () => {
+    if (onPrefetch) onPrefetch(gig.gig_id);
+  };
+
   return (
-    <Card onClick={onClick} className="w-full rounded-none">
-      <Card.Content className="p-5">
+    <Card onClick={onClick} onMouseEnter={handlePrefetch} className="w-full rounded-none">
+      <Card.Content className="flex h-full min-h-[300px] flex-col p-5">
         <img
           src={gig.image_url || gigPlaceholder}
           alt="Gig placeholder"
@@ -48,8 +52,8 @@ export default function GigCard({ gig, onClick }) {
         </div>
 
         {/* Navigation */}
-        <Link to={`/gig/${gig.id}`}>
-          <Button className="w-full justify-center">
+        <Link to={`/gig/${gig.gig_id}`} className="mt-auto">
+          <Button className="w-full justify-center" onMouseEnter={handlePrefetch}>
             View Gig
           </Button>
         </Link>

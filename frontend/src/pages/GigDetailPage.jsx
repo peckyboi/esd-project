@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import GigImage from "@/components/GigImage";
 import FreelancerCard from "@/components/FreelancerCard";
 import ReviewList from "@/components/ReviewList";
@@ -12,29 +13,20 @@ import { fetchGigById } from "@/api/browseGigApi";
 function GigDetailPage() {
     const navigate = useNavigate();
     const { gigId } = useParams();
-    
-    const [gig, setGig] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const numericGigId = useMemo(() => Number(gigId), [gigId]);
 
   const orderStatus = null; // can be null, in_progress or delivered
 
-    useEffect(() => {
-        async function load() {
-            setLoading(true);
-            setError(null);
-            try {
-                const data = await fetchGigById(gigId);
-                if (!data) setError("Gig not found.");
-                else setGig(data);
-            } catch (err) {
-                setError("Could not load gig details. Please try again.");
-            } finally {
-                setLoading(false);
-            }
-        }
-        load();
-    }, [gigId]);
+  const {
+    data: gig,
+    isLoading: loading,
+    isError,
+  } = useQuery({
+    queryKey: ["gig", numericGigId],
+    enabled: Number.isFinite(numericGigId) && numericGigId > 0,
+    queryFn: () => fetchGigById(numericGigId),
+    staleTime: 5 * 60 * 1000,
+  });
 
 
     if (loading) {
@@ -45,11 +37,11 @@ function GigDetailPage() {
         );
     }
     
-    if (error || !gig) { 
+    if (isError || !gig) { 
         return (
           <main className="flex flex-col items-center justify-center py-20">
             <Text as="h2" className="mb-4 text-2xl font-semibold">
-              {error || "Gig not found."}
+              {isError ? "Could not load gig details. Please try again." : "Gig not found."}
             </Text>
             <Link to={`/`}>
               <Button variant="outline">← Back to Homepage</Button>
