@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/retroui/Input";
 import { Select } from "@/components/retroui/Select";
 import { Text } from "@/components/retroui/Text";
 import GigCard from "@/components/GigCard";
 import { Loader2 } from "lucide-react";
-import { fetchGigs, fetchCategories } from "@/api/browseGigApi";
+import { fetchGigs, fetchCategories, fetchGigById } from "@/api/browseGigApi";
 
 // Filter config drives the dropdowns so we don't hardcode repeated JSX blocks.
 // Temporary data, will be linked later, currently it is for visuals
@@ -35,15 +36,9 @@ function FilterSelect({ label, options, value, onChange }) {
 
 function HomePage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [priceRange, setPriceRange] = useState("All");
   const [deliveryFilter, setDeliveryFilter] = useState("All");
-  const [categoryOptions, setCategoryOptions] = useState(["All"]);
-
-  useEffect(() => {
-    fetchCategories()
-      .then(setCategoryOptions)
-      .catch(() => setCategoryOptions(["All"]));
-  }, []);
 
   const filterConfig = [
     {
@@ -62,11 +57,6 @@ function HomePage() {
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
 
-  // Data state
-  const [gigs, setGigs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
   // Search
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
@@ -79,23 +69,26 @@ function HomePage() {
     };
   }, [search]);
 
-  // Fetch gigs whenever filters change 
-  const loadGigs = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchGigs({
-        category: category === "All" ? null : category, search: debouncedSearch
-      });
-      setGigs(data);
-    } catch (err) {
-      setError("Could not load gigs. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, [category, debouncedSearch]);
+  const { data: categoryOptions = ["All"] } = useQuery({
+    queryKey: ["gig-categories"],
+    queryFn: fetchCategories,
+    initialData: ["All"],
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => { loadGigs(); }, [loadGigs]);
+  const {
+    data: gigs = [],
+    isLoading: loading,
+    isError,
+  } = useQuery({
+    queryKey: ["gigs", category, debouncedSearch],
+    queryFn: () =>
+      fetchGigs({
+        category: category === "All" ? null : category,
+        search: debouncedSearch,
+      }),
+    staleTime: 60 * 1000,
+  });
 
   const filteredGigs = gigs.filter((gig) => {
     const priceMap = {
@@ -126,7 +119,7 @@ function HomePage() {
     <main className="min-h-screen w-full">
       <section className="min-h-screen w-full overflow-hidden bg-background">
         <section className="p-5">
-          <section className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-[1.6fr_repeat(3,minmax(0,1fr))]">
+          <section className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-[1.6fr_repeat(3,minmax(0,1fr))]">
             <label className="flex flex-col gap-1">
               <Text as="p" className="text-sm text-muted-foreground">
                 Search
@@ -163,18 +156,26 @@ function HomePage() {
             </div>
           )}
 
-          {error && (
+          {isError && (
             <div className="py-10 text-center text-destructive">
-              <Text as ="p">{error}</Text>
+              <Text as ="p">Could not load gigs. Please try again.</Text>
             </div>
           )}
 
-          {!loading && !error && (
+          {!loading && !isError && (
             <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filteredGigs.map((gig) => (
                 <GigCard
                   key={gig.gig_id}
                   gig={gig}
+                  onPrefetch={(gigId) => {
+                    if (!gigId) return;
+                    queryClient.prefetchQuery({
+                      queryKey: ["gig", Number(gigId)],
+                      queryFn: () => fetchGigById(gigId),
+                      staleTime: 5 * 60 * 1000,
+                    });
+                  }}
                   onClick={() => navigate(`/gig/${gig.gig_id}`)}
                 />
               ))}

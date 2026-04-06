@@ -101,6 +101,7 @@ async def get_chat_inbox(user_id: int, db: Session = Depends(get_db)):
                 other_user_id=other_user_id,
                 chat_status="OPEN" if case.status == "OPEN" else "CLOSED",
                 order_status=str(order.get("status", "unknown")),
+                order_price=order.get("price"),
                 latest_proposal_status=latest.status if latest else None,
             )
         )

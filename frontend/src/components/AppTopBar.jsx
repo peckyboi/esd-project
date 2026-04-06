@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/retroui/Input";
 import { Select } from "@/components/retroui/Select";
 import { Text } from "@/components/retroui/Text";
@@ -11,7 +11,7 @@ import { getNotificationsByUser } from "@/api/notificationApi";
 
 function AppTopBar() {
   const location = useLocation();
-  const { userId, role, resolvedUserId, setUserId, setRole, maxUserId, isUserIdValid } = useActor();
+  const { userId, role, resolvedUserId, setUserId, setRole } = useActor();
   const canEditIdentity = location.pathname === "/home";
   const [notifications, setNotifications] = useState([]);
   const [isNotifLoading, setIsNotifLoading] = useState(false);
@@ -35,7 +35,17 @@ function AppTopBar() {
     }
   };
 
-  const showUserIdError = userId !== "" && !isUserIdValid;
+  useEffect(() => {
+    if (!resolvedUserId) {
+      setNotifications([]);
+      setNotifError("Set a valid user id to view notifications.");
+      return;
+    }
+
+    loadNotifications();
+    const intervalId = setInterval(loadNotifications, 5000);
+    return () => clearInterval(intervalId);
+  }, [resolvedUserId]);
 
   return (
     <header className="flex items-center justify-between border-b border-border/60 bg-black/20 px-6 py-4">
@@ -51,28 +61,15 @@ function AppTopBar() {
             Acting As
           </Text>
 
-          <div className="flex flex-col gap-0.5 relative">
-            <Input
-              type="number"
-              min="1"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              disabled={!canEditIdentity}
-              placeholder="User ID"
-              className={showUserIdError
-                ? "h-9 w-28 bg-white text-sm border-red-500 disabled:cursor-not-allowed disabled:opacity-70"
-                : "h-9 w-28 bg-white text-sm disabled:cursor-not-allowed disabled:opacity-70"
-              }
-            />
-            {showUserIdError && (
-              <Text
-                as="p"
-                className="text-xs text-red-500 absolute top-full mt-1 left-0 whitespace-nowrap"
-              >
-                Valid users: 1 to {maxUserId}
-              </Text>
-            )}
-          </div>
+          <Input
+            type="number"
+            min="1"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            disabled={!canEditIdentity}
+            placeholder="User ID"
+            className="h-9 w-28 bg-white text-sm disabled:cursor-not-allowed disabled:opacity-70"
+          />
 
           <Select value={role} onValueChange={setRole}>
             <Select.Trigger

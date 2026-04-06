@@ -65,7 +65,7 @@ function ChatPage({ currentUserId }) {
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [busyAction, setBusyAction] = useState(false);
-  const [showPanel, setShowPanel] = useState(true);
+  const [showPanel, setShowPanel] = useState(false);
 
   useEffect(() => {
     latestProposalRef.current = latestProposal;
@@ -86,6 +86,7 @@ function ChatPage({ currentUserId }) {
         orderId: item.order_id,
         chatStatus: item.chat_status,
         orderStatus: item.order_status,
+        orderPrice: item.order_price ?? null,
         otherUserId: item.other_user_id,
         name: `User ${item.other_user_id}`,
         lastMessage: `${item.chat_status.toLowerCase()} • ${item.order_status}`,
@@ -251,7 +252,7 @@ function ChatPage({ currentUserId }) {
     setGig({
       title: `Order #${activeChat.orderId}`,
       freelancer: activeChat.name,
-      price: "-",
+      price: activeChat.orderPrice ?? null,
       deliveryTime: "-",
       status: activeChat.orderStatus || "unknown",
       statusMessage: `Chat ${activeChat.chatStatus.toLowerCase()} • Order ${activeChat.orderStatus}`,
@@ -438,14 +439,23 @@ function ChatPage({ currentUserId }) {
   return (
     <main className="h-screen flex flex-col bg-background p-4">
       <div
-        className={`flex-1 grid gap-4 min-h-0 ${
-          showPanel ? "grid-cols-[280px_1fr_340px]" : "grid-cols-[280px_1fr]"
-        }`}
+        className={`flex-1 grid gap-4 min-h-0 ${showPanel ? "grid-cols-[340px_1fr]" : "grid-cols-[280px_1fr]"}`}
       >
-        <Card>
-          <ChatList chats={chats} activeChatId={activeChatId} onSelectChat={setActiveChatId} />
-          {loadingChats && <div className="p-4 text-sm text-muted-foreground">Loading chats...</div>}
-        </Card>
+        {showPanel ? (
+          <Card className="overflow-hidden p-1 bg-muted rounded-md">
+            <GigInfoPanel
+              gig={gig}
+              onPrimaryAction={panelActions.onPrimary}
+              onSecondaryAction={panelActions.onSecondary}
+              secondaryDisabled={panelActions.secondaryDisabled || busyAction}
+            />
+          </Card>
+        ) : (
+          <Card>
+            <ChatList chats={chats} activeChatId={activeChatId} onSelectChat={setActiveChatId} />
+            {loadingChats && <div className="p-4 text-sm text-muted-foreground">Loading chats...</div>}
+          </Card>
+        )}
 
         <div className="relative flex flex-col min-h-0 h-full">
           <button
@@ -468,16 +478,6 @@ function ChatPage({ currentUserId }) {
           </Card>
         </div>
 
-        {showPanel && (
-          <Card className="overflow-hidden p-1 bg-muted rounded-md">
-            <GigInfoPanel
-              gig={gig}
-              onPrimaryAction={panelActions.onPrimary}
-              onSecondaryAction={panelActions.onSecondary}
-              secondaryDisabled={panelActions.secondaryDisabled || busyAction}
-            />
-          </Card>
-        )}
       </div>
     </main>
   );
