@@ -49,7 +49,7 @@ function HomePage() {
     {
       id: "price",
       label: "Price",
-      options: ["All", "$100-$300", "$300-$600", "$600-$1000"],
+      options: ["All", "Under $100", "$100-$300", "$300-$600", "$600-$1000"],
     },
     {
       id: "delivery",
@@ -99,6 +99,7 @@ function HomePage() {
 
   const filteredGigs = gigs.filter((gig) => {
     const priceMap = {
+      "Under $100": [0, 99],
       "$100-$300": [100, 300],
       "$300-$600": [300, 600],
       "$600-$1000": [600, 1000],
