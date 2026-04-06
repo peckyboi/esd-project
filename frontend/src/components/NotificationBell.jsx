@@ -18,6 +18,7 @@ function NotificationBell({
   };
 
   const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
     const normalized = dateStr.endsWith("Z") || dateStr.includes("+")
       ? dateStr
       : dateStr + "Z";

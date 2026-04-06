@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/retroui/Input";
 import { Select } from "@/components/retroui/Select";
 import { Text } from "@/components/retroui/Text";
@@ -34,6 +34,18 @@ function AppTopBar() {
       setIsNotifLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!resolvedUserId) {
+      setNotifications([]);
+      setNotifError("Set a valid user id to view notifications.");
+      return;
+    }
+
+    loadNotifications();
+    const intervalId = setInterval(loadNotifications, 5000);
+    return () => clearInterval(intervalId);
+  }, [resolvedUserId]);
 
   return (
     <header className="flex items-center justify-between border-b border-border/60 bg-black/20 px-6 py-4">
