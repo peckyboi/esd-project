@@ -39,6 +39,19 @@ const isNotFoundError = (error) => {
   return /^\[404\]/.test(message) || message.includes("No settlement proposal found");
 };
 
+async function fetchUserName(userId) {
+  try {
+    const res = await fetch(
+      `https://personal-43hivjqa.outsystemscloud.com/User/rest/User/user/${userId}/`
+    );
+    const json = await res.json();
+    const user = json?.data?.user ?? json?.data ?? json;
+    return user?.displayName ?? user?.display_name ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function ChatPage({ currentUserId }) {
   const [searchParams] = useSearchParams();
   const wsRef = useRef(null);
@@ -79,6 +92,19 @@ function ChatPage({ currentUserId }) {
       }));
 
       setChats(mapped);
+
+      const names = await Promise.all(
+        mapped.map((item) => fetchUserName(item.otherUserId))
+      );
+      setChats(
+        mapped.map((item, i) => ({
+          ...item,
+          name: names[i] ?? `User ${item.otherUserId}`,
+          displayName: names[i]
+            ? `${names[i]} (ID: ${item.otherUserId})`
+            : `User ${item.otherUserId}`,
+        }))
+      );
 
       const queryChatId = searchParams.get("chatId");
       const queryOrderId = searchParams.get("orderId");
