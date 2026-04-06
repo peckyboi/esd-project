@@ -23,7 +23,7 @@ function ChatListItem({ chat, active, onClick, index }) {
                     as="p"
                     className={`font-medium text-foreground truncate`}
                 >
-                    {chat.name}
+                    {chat.displayName ?? chat.name}
                 </Text>
                 <Text
                     as="p"
