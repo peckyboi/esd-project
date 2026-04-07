@@ -1,7 +1,7 @@
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
 COPY . .
-RUN ./mvnw -DskipTests clean package
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw && ./mvnw -DskipTests clean package
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
