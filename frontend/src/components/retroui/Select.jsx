@@ -52,7 +52,7 @@ const SelectContent = ({
         </SelectPrimitive.ScrollUpButton>
         <SelectPrimitive.Viewport
           className={cn(position === "popper" &&
-            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]")}>
+            "w-full min-w-[var(--radix-select-trigger-width)] max-h-72 overflow-y-auto")}>
           {children}
         </SelectPrimitive.Viewport>
         <SelectPrimitive.ScrollDownButton

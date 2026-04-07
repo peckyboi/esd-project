@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/retroui/Input";
@@ -18,7 +18,7 @@ function FilterSelect({ label, options, value, onChange }) {
       <Text as="p" className="text-sm text-muted-foreground">
         {label}
       </Text>
-      <Select defaultValue={options[0]} value={value} onValueChange={onChange}>
+      <Select value={value} onValueChange={onChange}>
         <Select.Trigger className="h-12 w-full min-w-0 text-lg">
           <Select.Value />
         </Select.Trigger>
@@ -81,16 +81,30 @@ function HomePage() {
     isLoading: loading,
     isError,
   } = useQuery({
-    queryKey: ["gigs", category, debouncedSearch],
+    queryKey: ["gigs", debouncedSearch],
     queryFn: () =>
       fetchGigs({
-        category: category === "All" ? null : category,
         search: debouncedSearch,
       }),
     staleTime: 60 * 1000,
   });
 
+  const resolvedCategoryOptions = useMemo(() => {
+    const fromQuery = Array.isArray(categoryOptions) ? categoryOptions : ["All"];
+    const fromGigs = gigs
+      .map((gig) => String(gig?.category || gig?.Category || "").trim())
+      .filter(Boolean);
+    const merged = new Set(["All", ...fromQuery, ...fromGigs]);
+    return Array.from(merged);
+  }, [categoryOptions, gigs]);
+
   const filteredGigs = gigs.filter((gig) => {
+    if (category !== "All") {
+      const gigCategory = String(gig?.category || gig?.Category || "").toLowerCase();
+      const selectedCategory = String(category || "").toLowerCase();
+      if (!gigCategory.includes(selectedCategory)) return false;
+    }
+
     const priceMap = {
       "Under $100": [0, 99],
       "$100-$300": [100, 300],
@@ -134,7 +148,7 @@ function HomePage() {
 
             <FilterSelect
               label="Category"
-              options={categoryOptions}
+              options={resolvedCategoryOptions}
               value={category}
               onChange={setCategory}
             />

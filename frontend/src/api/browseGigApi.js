@@ -18,9 +18,27 @@ export async function fetchGigById(gigId) {
 }
 
 export async function fetchCategories() {
-    const response = await fetch(`${BROWSE_GIG_API_BASE_URL}/browse/gigs`);
-    if (!response.ok) throw new Error(`Failed to fetch categories: ${response.status}`);
-    const gigs = await response.json();
+    const pageSize = 100;
+    let skip = 0;
+    const categories = new Set();
 
-    return ["All", ...new Set(gigs.map(gig => gig.category).filter(Boolean))];
+    while (true) {
+        const response = await fetch(
+            `${BROWSE_GIG_API_BASE_URL}/browse/gigs?skip=${skip}&limit=${pageSize}`
+        );
+        if (!response.ok) throw new Error(`Failed to fetch categories: ${response.status}`);
+
+        const data = await response.json();
+        const gigs = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+
+        gigs.forEach((gig) => {
+            const category = String(gig?.category || gig?.Category || "").trim();
+            if (category) categories.add(category);
+        });
+
+        if (gigs.length < pageSize) break;
+        skip += pageSize;
+    }
+
+    return ["All", ...Array.from(categories).sort((a, b) => a.localeCompare(b))];
 }
