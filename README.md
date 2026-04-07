@@ -5,7 +5,6 @@ A full-stack microservices project for a freelance marketplace workflow:
 - Manage order lifecycle (deliver, approve, dispute, settle)
 - Real-time dispute chat (WebSocket)
 - Asynchronous notifications via RabbitMQ events
-- Reviews after completion
 
 ## Repository Structure
 
@@ -41,7 +40,7 @@ freelance_service/
 
 ### Messaging and Realtime
 - RabbitMQ is used for async domain events (`order_events`, `payment_events`).
-- Notifications are currently updated in UI using polling (not WebSocket push).
+- Notifications are currently updated in UI using polling every 5 seconds.
 - Dispute chat uses WebSocket for live message exchange.
 
 ## Service Ports
@@ -64,7 +63,7 @@ freelance_service/
 
 ### 1) Browse and Order
 1. UI calls `browse-gig-composite` for gig catalog/details.
-2. Composite fetches gigs from `freelance-job-service`, reviews from `review-microservice`, and user profile data.
+2. Composite fetches gigs from `freelance-job-service`, reviews from `review-microservice`, and user profile data on Outsystems.
 3. User places order; order lifecycle is managed by `order-microservice`.
 
 ### 2) Deliver and Approve
@@ -72,7 +71,7 @@ freelance_service/
 2. Client approves order.
 3. Payment is released via `payment-microservice`.
 4. Order status is finalized by `order-microservice`.
-5. Services emit events consumed by dependent services (for example notifications/reviews).
+5. Services emit events consumed by `notification-microservice`.
 
 ### 3) Dispute and Settlement
 1. Client/freelancer starts dispute via `dispute-composite`.
@@ -84,46 +83,12 @@ freelance_service/
 ### 4) Notifications
 1. Core services publish events to RabbitMQ.
 2. `notification-microservice` consumes events and stores notifications.
-3. Frontend polls notifications endpoint periodically to refresh badge/list.
+3. Frontend polls notifications endpoint every 5 seconds to refresh badge/list.
 
-## Running the Project
-
-### Prerequisites
-- Docker Desktop (or Docker Engine + Compose)
-- Node.js 18+ (only needed if you run frontend outside Docker)
-
-### Option A: Run Everything with Docker Compose (Recommended)
-
-```bash
-docker compose -f infra/docker-compose.yml up --build
-```
-
-Open:
-- Frontend: [http://localhost:5173](http://localhost:5173)
-- RabbitMQ Management: [http://localhost:15672](http://localhost:15672)
-
-### Option B: Run Backend in Docker, Frontend Locally
-
-1. Start backend services:
-```bash
-docker compose -f infra/docker-compose.yml up --build \
-  rabbitmq order-db order-microservice review-db review-microservice \
-  payment-db payment-microservice freelance-job-db freelance-job-service \
-  browse-gig-composite notification-db notification-microservice \
-  chat-db chat-microservice-2 dispute-composite-db dispute-composite seeder
-```
-
-2. In a separate terminal, run frontend:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## Environment Variables
+## Environment Variables (Need to create before running)
 
 ### Root / Infra
-- `infra/.env`
+- `infra/.env`:
 - `STRIPE_SECRET_KEY` is required by `payment-microservice`.
 
 ### Frontend
@@ -134,6 +99,24 @@ npm run dev
 - `VITE_NOTIFICATION_API_BASE_URL`
 
 Current defaults in code/compose target local ports.
+
+## Running the Project
+
+### Prerequisites
+- Docker Desktop (or Docker Engine + Compose)
+- Node.js 18+ (only needed if you run frontend outside Docker)
+
+### Run Everything with Docker Compose
+
+```bash
+cd infra
+docker compose up --build
+```
+
+Open:
+- Frontend: [http://localhost:5173](http://localhost:5173)
+- RabbitMQ Management: [http://localhost:15672](http://localhost:15672)
+
 
 ## Testing and Health Checks
 
@@ -176,11 +159,3 @@ docker compose -f infra/docker-compose.yml down
 docker compose -f infra/docker-compose.yml up --build
 ```
 
-## Team Workflow
-
-- Keep changes scoped to your service + shared contracts.
-- If changing event payloads or statuses, update publisher service, consumer service(s), and API/event documentation.
-
-## License
-
-Academic project for IS213 ESD coursework.
